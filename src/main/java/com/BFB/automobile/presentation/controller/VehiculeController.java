@@ -11,44 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════
- * COUCHE PRÉSENTATION - REST Controller
- * ═══════════════════════════════════════════════════════════════════════════
- * 
- * PATTERNS UTILISÉS:
- * 
- * 1. MVC (Model-View-Controller) Pattern
- *    - Controller: cette classe (gère les requêtes HTTP)
- *    - Model: Vehicule.java
- *    - View: pas de vue (API REST, le client gère la vue)
- *    POURQUOI: séparation présentation ↔ logique métier
- * 
- * 2. REST (Representational State Transfer)
- *    - Architecture pour APIs web
- *    - Verbes HTTP: GET (lecture), POST (création), PUT (modification), DELETE (suppression)
- *    - Stateless: chaque requête est indépendante
- *    POURQUOI: standard universel, interopérable, scalable
- * 
- * 3. Dependency Injection (via constructeur)
- *    - Le service est injecté automatiquement par Spring
- *    - Couplage faible: le controller ne crée pas le service lui-même
- *    POURQUOI: testabilité (on peut mocker le service), flexibilité
- * 
- * 4. DTO Validation Pattern (Bean Validation)
- *    - Annotation @Valid déclenche la validation avant l'exécution de la méthode
- *    - Contraintes définies dans le POJO (@NotNull, @Min)
- *    POURQUOI: validation automatique, cohérente, centralisée
- * 
- * RESPONSABILITÉS DE CETTE COUCHE:
- * ✅ Réception des requêtes HTTP
- * ✅ Validation des entrées utilisateur (@Valid)
- * ✅ Transformation HTTP → appel métier
- * ✅ Gestion des codes de réponse HTTP (200, 201, 404, 400...)
- * ❌ PAS de logique métier (délégation au service)
- * ❌ PAS d'accès direct à la base de données
- * ═══════════════════════════════════════════════════════════════════════════
+ * COUCHE PRÉSENTATION - Controller REST
+ * Gère les requêtes HTTP et délègue la logique métier au service.
  */
-@RestController // PATTERN: REST Controller - Combine @Controller + @ResponseBody (sérialisation JSON automatique)
+@RestController
 @RequestMapping("/api/vehicules") // PATTERN: Centralized Request Mapping - Tous les endpoints commencent par /api/vehicules
 public class VehiculeController {
     

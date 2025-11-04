@@ -10,43 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════
- * COUCHE LOGIQUE MÉTIER - Service Layer
- * ═══════════════════════════════════════════════════════════════════════════
- * 
- * PATTERNS UTILISÉS:
- * 
- * 1. Service Layer Pattern
- *    - Couche qui encapsule la logique métier
- *    - Intermédiaire entre la présentation et le stockage
- *    - Coordonne les opérations complexes
- *    POURQUOI: centraliser la logique métier, réutilisabilité, testabilité
- * 
- * 2. Facade Pattern
- *    - Interface simplifiée pour des opérations complexes
- *    - Cache la complexité d'orchestration repository + producer
- *    POURQUOI: le controller n'a pas besoin de savoir qu'on appelle 2 composants
- * 
- * 3. Dependency Injection (Constructor Injection)
- *    - Injection du repository ET du producer
- *    - Couplage faible avec les couches inférieures
- *    POURQUOI: testabilité (mock facile), flexibilité, immutabilité
- * 
- * 4. Orchestration Pattern
- *    - Le service orchestre plusieurs appels (repository + producer)
- *    - Gère l'ordre des opérations et la cohérence
- *    POURQUOI: logique métier complexe nécessite coordination
- * 
- * RESPONSABILITÉS DE CETTE COUCHE:
- * ✅ Manipulation et transformation des POJO
- * ✅ Règles métier (validation, calculs, cohérence)
- * ✅ Orchestration des appels repository + producer
- * ✅ Gestion des transactions (si nécessaire avec @Transactional)
- * ❌ PAS de gestion HTTP (codes de réponse, requêtes)
- * ❌ PAS d'accès direct à MongoDB (délégation au repository)
- * ═══════════════════════════════════════════════════════════════════════════
+ * COUCHE LOGIQUE MÉTIER - Service
+ * Contient la logique métier et orchestre les appels au repository et au producer.
  */
-@Service // PATTERN: Service Component - Spring détecte et crée un bean singleton automatiquement
+@Service
 public class VehiculeService {
     
     // ========== PATTERN: Dependency Injection (Constructor Injection) ==========
