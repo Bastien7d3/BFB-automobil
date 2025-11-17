@@ -1,135 +1,206 @@
 package com.BFB.automobile.business.service;
 
-import com.BFB.automobile.data.producer.VehiculeProducer;
-import com.BFB.automobile.data.repository.VehiculeRepository;
+import com.BFB.automobile.business.exception.BusinessException;
+import com.BFB.automobile.data.Contrat;
+import com.BFB.automobile.data.EtatContrat;
+import com.BFB.automobile.data.EtatVehicule;
 import com.BFB.automobile.data.Vehicule;
+import com.BFB.automobile.data.repository.ContratRepository;
+import com.BFB.automobile.data.repository.VehiculeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * COUCHE LOGIQUE MÉTIER - Service
- * Contient la logique métier et orchestre les appels au repository et au producer.
+ * Service métier pour la gestion des véhicules
+ * Implémente les règles métier :
+ * - Un véhicule doit être unique (par immatriculation)
+ * - Les véhicules en panne ne peuvent pas être loués
+ * - Si un véhicule est déclaré en panne, les contrats en attente doivent être annulés
  */
 @Service
+@Transactional
 public class VehiculeService {
     
-    // ========== PATTERN: Dependency Injection (Constructor Injection) ==========
-    // POURQUOI deux dépendances:
-    // - VehiculeRepository: pour la persistance MongoDB
-    // - VehiculeProducer: pour la communication avec systèmes externes
-    // POURQUOI final: immutabilité → thread-safe
     private final VehiculeRepository vehiculeRepository;
-    private final VehiculeProducer vehiculeProducer;
+    private final ContratRepository contratRepository;
     
-    @Autowired // Spring injecte automatiquement les deux dépendances (IoC)
+    @Autowired
     public VehiculeService(VehiculeRepository vehiculeRepository, 
-                          VehiculeProducer vehiculeProducer) {
+                          ContratRepository contratRepository) {
         this.vehiculeRepository = vehiculeRepository;
-        this.vehiculeProducer = vehiculeProducer;
+        this.contratRepository = contratRepository;
     }
     
     /**
-     * ========== MÉTHODE: Récupération de tous les véhicules ==========
-     * PATTERN: Simple Delegation - Pas de logique métier ici, juste délégation
-     * POURQUOI quand même passer par le service:
-     * - Abstraction: le controller ne connaît pas le repository
-     * - Évolutivité: on peut ajouter du filtrage/tri plus tard
-     */
-    public List<Vehicule> obtenirTousLesVehicules() {
-        return vehiculeRepository.findAll(); // Délégation directe au repository
-    }
-    
-    /**
-     * ========== MÉTHODE: Récupération par ID ==========
-     * PATTERN: Optional Pattern - Gestion élégante de l'absence de résultat
-     * POURQUOI Optional:
-     * - Évite NullPointerException
-     * - Force le client à gérer l'absence de résultat
-     */
-    public Optional<Vehicule> obtenirVehiculeParId(String id) {
-        return vehiculeRepository.findById(id);
-    }
-    
-    /**
-     * ========== MÉTHODE: Création d'un véhicule ==========
-     * PATTERN: Orchestration Pattern - Coordination de plusieurs opérations
-     * 
-     * FLUX D'ORCHESTRATION:
-     * 1. Appel au producer pour récupérer la cotation (système externe)
-     * 2. Sauvegarde dans MongoDB via repository
-     * 3. Publication du véhicule créé vers systèmes externes (notification)
-     * 
-     * POURQUOI CET ORDRE:
-     * - Cotation d'abord: on pourrait valider que le prix est cohérent
-     * - Sauvegarde ensuite: on garantit la persistance
-     * - Publication en dernier: on notifie uniquement si tout s'est bien passé
-     * 
-     * LOGIQUE MÉTIER:
-     * - Dans un vrai projet, on comparerait cotation vs prix
-     * - Si incohérence, on lèverait une BusinessException
-     * - Ici c'est simplifié pour la démo
+     * Crée un nouveau véhicule après validation
      */
     public Vehicule creerVehicule(Vehicule vehicule) {
-        // ORCHESTRATION ÉTAPE 1: Récupération cotation externe
-        // (Dans un vrai projet, on comparerait cotation vs prix et on lèverait une exception si incohérence)
-        vehiculeProducer.obtenirCotation(
-            vehicule.getMarque(), 
-            vehicule.getModele(), 
-            vehicule.getAnnee()
-        );
+        // Règle : Un véhicule doit être unique (par immatriculation)
+        if (vehiculeRepository.existsByImmatriculation(vehicule.getImmatriculation())) {
+            throw new BusinessException(
+                "IMMATRICULATION_EXISTE",
+                "Un véhicule avec cette immatriculation existe déjà");
+        }
         
-        // ORCHESTRATION ÉTAPE 2: Sauvegarde dans la base de données (couche stockage)
-        Vehicule vehiculeSauvegarde = vehiculeRepository.save(vehicule);
-        
-        // ORCHESTRATION ÉTAPE 3: Publication vers système externe (notification)
-        vehiculeProducer.publierVehicule(vehiculeSauvegarde);
-        
-        return vehiculeSauvegarde;
+        try {
+            return vehiculeRepository.save(vehicule);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(
+                "ERREUR_CREATION_VEHICULE",
+                "Impossible de créer le véhicule : violation de contrainte d'unicité", e);
+        }
     }
     
     /**
-     * ========== MÉTHODE: Mise à jour d'un véhicule ==========
-     * PATTERN: Guard Clause - Vérification d'existence avant traitement
-     * LOGIQUE MÉTIER: Validation que le véhicule existe
+     * Met à jour un véhicule existant
      */
-    public Vehicule mettreAJourVehicule(String id, Vehicule vehicule) {
-        // LOGIQUE MÉTIER: vérifier que le véhicule existe
-        // Si absent, on lève une exception (le controller gèrera HTTP 404)
-        if (!vehiculeRepository.existsById(id)) {
-            throw new RuntimeException("Véhicule non trouvé avec l'ID: " + id);
+    public Vehicule mettreAJourVehicule(Long id, Vehicule vehiculeModifie) {
+        Vehicule vehiculeExistant = vehiculeRepository.findById(id)
+            .orElseThrow(() -> new BusinessException(
+                "VEHICULE_NON_TROUVE",
+                "Véhicule avec l'ID " + id + " non trouvé"));
+        
+        // Vérifier si la nouvelle immatriculation n'est pas déjà utilisée
+        if (!vehiculeExistant.getImmatriculation().equals(vehiculeModifie.getImmatriculation())) {
+            if (vehiculeRepository.existsByImmatriculation(vehiculeModifie.getImmatriculation())) {
+                throw new BusinessException(
+                    "IMMATRICULATION_EXISTE",
+                    "Un véhicule avec cette immatriculation existe déjà");
+            }
         }
         
-        // Mise à jour de l'ID (pour garantir cohérence)
-        vehicule.setId(id);
+        // Mise à jour des champs
+        vehiculeExistant.setMarque(vehiculeModifie.getMarque());
+        vehiculeExistant.setModele(vehiculeModifie.getModele());
+        vehiculeExistant.setMotorisation(vehiculeModifie.getMotorisation());
+        vehiculeExistant.setCouleur(vehiculeModifie.getCouleur());
+        vehiculeExistant.setImmatriculation(vehiculeModifie.getImmatriculation());
+        vehiculeExistant.setDateAcquisition(vehiculeModifie.getDateAcquisition());
+        
+        return vehiculeRepository.save(vehiculeExistant);
+    }
+    
+    /**
+     * Change l'état d'un véhicule
+     * Règle : Si un véhicule est déclaré en panne, 
+     * les contrats en attente doivent être annulés automatiquement
+     */
+    public Vehicule changerEtatVehicule(Long id, EtatVehicule nouvelEtat) {
+        Vehicule vehicule = vehiculeRepository.findById(id)
+            .orElseThrow(() -> new BusinessException(
+                "VEHICULE_NON_TROUVE",
+                "Véhicule avec l'ID " + id + " non trouvé"));
+        
+        EtatVehicule ancienEtat = vehicule.getEtat();
+        vehicule.setEtat(nouvelEtat);
+        
+        // Règle métier : Si passage en panne, annuler les contrats en attente
+        if (nouvelEtat == EtatVehicule.EN_PANNE && ancienEtat != EtatVehicule.EN_PANNE) {
+            annulerContratsEnAttente(vehicule);
+        }
+        
         return vehiculeRepository.save(vehicule);
     }
     
     /**
-     * ========== MÉTHODE: Suppression d'un véhicule ==========
-     * PATTERN: Simple Delegation
+     * Annule tous les contrats en attente pour un véhicule
      */
-    public void supprimerVehicule(String id) {
-        vehiculeRepository.deleteById(id); // Délégation au repository
+    private void annulerContratsEnAttente(Vehicule vehicule) {
+        List<Contrat> contratsEnAttente = contratRepository
+            .findContratsEnAttenteByVehicule(vehicule.getId());
+        
+        for (Contrat contrat : contratsEnAttente) {
+            contrat.setEtat(EtatContrat.ANNULE);
+            contrat.setCommentaire(
+                "Contrat annulé automatiquement : véhicule déclaré en panne");
+            contratRepository.save(contrat);
+        }
     }
     
     /**
-     * ========== MÉTHODE: Recherche par marque ==========
-     * PATTERN: Query Method Delegation
-     * POURQUOI dans le service: on pourrait ajouter de la logique (filtrage, tri)
+     * Récupère tous les véhicules
      */
-    public List<Vehicule> rechercherParMarque(String marque) {
-        return vehiculeRepository.findByMarque(marque);
+    @Transactional(readOnly = true)
+    public List<Vehicule> obtenirTousLesVehicules() {
+        return vehiculeRepository.findAll();
     }
     
     /**
-     * ========== MÉTHODE: Véhicules récents ==========
-     * LOGIQUE MÉTIER: "Récent" = année > seuil
-     * Le seuil pourrait venir de la configuration (externalisation)
+     * Récupère un véhicule par son ID
      */
-    public List<Vehicule> obtenirVehiculesRecents(Integer anneeMin) {
-        return vehiculeRepository.findByAnneeGreaterThan(anneeMin);
+    @Transactional(readOnly = true)
+    public Vehicule obtenirVehiculeParId(Long id) {
+        return vehiculeRepository.findById(id)
+            .orElseThrow(() -> new BusinessException(
+                "VEHICULE_NON_TROUVE",
+                "Véhicule avec l'ID " + id + " non trouvé"));
+    }
+    
+    /**
+     * Récupère tous les véhicules disponibles
+     */
+    @Transactional(readOnly = true)
+    public List<Vehicule> obtenirVehiculesDisponibles() {
+        return vehiculeRepository.findByEtatOrderByMarqueAscModeleAsc(EtatVehicule.DISPONIBLE);
+    }
+    
+    /**
+     * Récupère les véhicules par état
+     */
+    @Transactional(readOnly = true)
+    public List<Vehicule> obtenirVehiculesParEtat(EtatVehicule etat) {
+        return vehiculeRepository.findByEtat(etat);
+    }
+    
+    /**
+     * Recherche des véhicules par marque et/ou modèle
+     */
+    @Transactional(readOnly = true)
+    public List<Vehicule> rechercherVehicules(String marque, String modele) {
+        if (marque != null && modele != null) {
+            return vehiculeRepository.searchByMarqueAndModele(marque, modele);
+        } else if (marque != null) {
+            return vehiculeRepository.findByMarqueContainingIgnoreCase(marque);
+        } else if (modele != null) {
+            return vehiculeRepository.findByModeleContainingIgnoreCase(modele);
+        } else {
+            return vehiculeRepository.findAll();
+        }
+    }
+    
+    /**
+     * Recherche un véhicule par son immatriculation
+     */
+    @Transactional(readOnly = true)
+    public Optional<Vehicule> rechercherParImmatriculation(String immatriculation) {
+        return vehiculeRepository.findByImmatriculation(immatriculation);
+    }
+    
+    /**
+     * Supprime un véhicule (si aucun contrat actif)
+     */
+    public void supprimerVehicule(Long id) {
+        Vehicule vehicule = vehiculeRepository.findById(id)
+            .orElseThrow(() -> new BusinessException(
+                "VEHICULE_NON_TROUVE",
+                "Véhicule avec l'ID " + id + " non trouvé"));
+        
+        // Vérifier qu'il n'y a pas de contrats actifs
+        List<Contrat> contratsActifs = contratRepository.findByVehicule(vehicule).stream()
+            .filter(Contrat::estActif)
+            .toList();
+        
+        if (!contratsActifs.isEmpty()) {
+            throw new BusinessException(
+                "VEHICULE_EN_LOCATION",
+                "Impossible de supprimer le véhicule : il a des contrats actifs");
+        }
+        
+        vehiculeRepository.delete(vehicule);
     }
 }

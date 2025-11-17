@@ -1,7 +1,10 @@
 package com.BFB.automobile.presentation.controller;
 
 import com.BFB.automobile.business.service.VehiculeService;
+import com.BFB.automobile.data.EtatVehicule;
 import com.BFB.automobile.data.Vehicule;
+import com.BFB.automobile.presentation.dto.VehiculeDTO;
+import com.BFB.automobile.presentation.mapper.VehiculeMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,128 +12,127 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * COUCHE PRÉSENTATION - Controller REST
- * Gère les requêtes HTTP et délègue la logique métier au service.
+ * Contrôleur REST pour la gestion des véhicules
+ * Expose les endpoints de l'API pour les opérations CRUD sur les véhicules
  */
 @RestController
-@RequestMapping("/api/vehicules") // PATTERN: Centralized Request Mapping - Tous les endpoints commencent par /api/vehicules
+@RequestMapping("/api/vehicules")
+@CrossOrigin(origins = "*")
 public class VehiculeController {
     
-    // ========== PATTERN: Dependency Injection (Constructor Injection) ==========
-    // POURQUOI constructeur et non @Autowired sur le champ:
-    // - Immutabilité (final) → thread-safe
-    // - Testabilité (on peut passer un mock dans les tests)
-    // - Obligation explicite (Spring échoue si la dépendance manque)
-    // - Recommandation officielle Spring
     private final VehiculeService vehiculeService;
+    private final VehiculeMapper vehiculeMapper;
     
-    @Autowired // Spring injecte automatiquement VehiculeService (IoC - Inversion of Control)
-    public VehiculeController(VehiculeService vehiculeService) {
+    @Autowired
+    public VehiculeController(VehiculeService vehiculeService, 
+                             VehiculeMapper vehiculeMapper) {
         this.vehiculeService = vehiculeService;
+        this.vehiculeMapper = vehiculeMapper;
     }
     
     /**
-     * ========== ENDPOINT: GET /api/vehicules ==========
-     * PATTERN: Query Method (récupération de liste)
-     * POURQUOI ResponseEntity: contrôle fin du code HTTP et des headers
+     * GET /api/vehicules - Récupère tous les véhicules
+     * Paramètres optionnels : marque, modele, etat
      */
-    @GetMapping // Équivalent à @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<Vehicule>> obtenirTousLesVehicules() {
-        List<Vehicule> vehicules = vehiculeService.obtenirTousLesVehicules();
-        return ResponseEntity.ok(vehicules); // HTTP 200 OK + body JSON
+    @GetMapping
+    public ResponseEntity<List<VehiculeDTO>> obtenirTousLesVehicules(
+            @RequestParam(required = false) String marque,
+            @RequestParam(required = false) String modele,
+            @RequestParam(required = false) EtatVehicule etat) {
+        
+        List<Vehicule> vehicules;
+        
+        if (etat != null) {
+            vehicules = vehiculeService.obtenirVehiculesParEtat(etat);
+        } else if (marque != null || modele != null) {
+            vehicules = vehiculeService.rechercherVehicules(marque, modele);
+        } else {
+            vehicules = vehiculeService.obtenirTousLesVehicules();
+        }
+        
+        List<VehiculeDTO> dtos = vehicules.stream()
+                .map(vehiculeMapper::toDTO)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(dtos);
     }
     
     /**
-     * ========== ENDPOINT: GET /api/vehicules/{id} ==========
-     * PATTERN: Path Variable - L'ID est dans l'URL
-     * PATTERN: Optional Pattern - Gestion élégante de l'absence de résultat
+     * GET /api/vehicules/disponibles - Récupère tous les véhicules disponibles
+     */
+    @GetMapping("/disponibles")
+    public ResponseEntity<List<VehiculeDTO>> obtenirVehiculesDisponibles() {
+        List<Vehicule> vehicules = vehiculeService.obtenirVehiculesDisponibles();
+        List<VehiculeDTO> dtos = vehicules.stream()
+                .map(vehiculeMapper::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+    
+    /**
+     * GET /api/vehicules/{id} - Récupère un véhicule par son ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Vehicule> obtenirVehiculeParId(@PathVariable String id) {
-        // Le service retourne Optional<Vehicule>
-        // Si présent → HTTP 200 + véhicule
-        // Si absent → HTTP 404
-        return vehiculeService.obtenirVehiculeParId(id)
-            .map(ResponseEntity::ok)              // Présent: 200 OK
-            .orElse(ResponseEntity.notFound().build()); // Absent: 404 Not Found
+    public ResponseEntity<VehiculeDTO> obtenirVehiculeParId(@PathVariable Long id) {
+        Vehicule vehicule = vehiculeService.obtenirVehiculeParId(id);
+        return ResponseEntity.ok(vehiculeMapper.toDTO(vehicule));
     }
     
     /**
-     * ========== ENDPOINT: POST /api/vehicules ==========
-     * PATTERN: Command Method (création)
-     * PATTERN: Bean Validation - @Valid déclenche la validation AVANT l'exécution
-     * 
-     * POURQUOI @Valid ICI:
-     * - Validation des entrées utilisateur (couche présentation)
-     * - Si validation échoue → HTTP 400 Bad Request automatique
-     * - Garantit que le service reçoit des données valides
-     * 
-     * FLUX:
-     * 1. Spring désérialise JSON → objet Vehicule
-     * 2. @Valid déclenche validation (@NotNull, @Min, etc.)
-     * 3. Si OK → appel vehiculeService.creerVehicule()
-     * 4. Si KO → exception MethodArgumentNotValidException → HTTP 400
+     * GET /api/vehicules/immatriculation/{immatriculation} - Recherche par immatriculation
+     */
+    @GetMapping("/immatriculation/{immatriculation}")
+    public ResponseEntity<VehiculeDTO> rechercherParImmatriculation(
+            @PathVariable String immatriculation) {
+        return vehiculeService.rechercherParImmatriculation(immatriculation)
+                .map(vehicule -> ResponseEntity.ok(vehiculeMapper.toDTO(vehicule)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * POST /api/vehicules - Crée un nouveau véhicule
      */
     @PostMapping
-    public ResponseEntity<Vehicule> creerVehicule(@Valid @RequestBody Vehicule vehicule) {
-        // À ce stade, le véhicule est garanti valide (grâce à @Valid)
+    public ResponseEntity<VehiculeDTO> creerVehicule(
+            @Valid @RequestBody VehiculeDTO vehiculeDTO) {
+        Vehicule vehicule = vehiculeMapper.toEntity(vehiculeDTO);
         Vehicule vehiculeCree = vehiculeService.creerVehicule(vehicule);
-        return ResponseEntity.status(HttpStatus.CREATED).body(vehiculeCree); // HTTP 201 Created
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(vehiculeMapper.toDTO(vehiculeCree));
     }
     
     /**
-     * ========== ENDPOINT: PUT /api/vehicules/{id} ==========
-     * PATTERN: Command Method (modification)
-     * PATTERN: Path Variable + Request Body
+     * PUT /api/vehicules/{id} - Met à jour un véhicule existant
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Vehicule> mettreAJourVehicule(
-            @PathVariable String id,
-            @Valid @RequestBody Vehicule vehicule) { // @Valid pour valider les modifications
-        try {
-            Vehicule vehiculeMaj = vehiculeService.mettreAJourVehicule(id, vehicule);
-            return ResponseEntity.ok(vehiculeMaj); // HTTP 200 OK
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build(); // HTTP 404 si véhicule introuvable
-        }
+    public ResponseEntity<VehiculeDTO> mettreAJourVehicule(
+            @PathVariable Long id,
+            @Valid @RequestBody VehiculeDTO vehiculeDTO) {
+        Vehicule vehicule = vehiculeMapper.toEntity(vehiculeDTO);
+        Vehicule vehiculeMisAJour = vehiculeService.mettreAJourVehicule(id, vehicule);
+        return ResponseEntity.ok(vehiculeMapper.toDTO(vehiculeMisAJour));
     }
     
     /**
-     * ========== ENDPOINT: DELETE /api/vehicules/{id} ==========
-     * PATTERN: Command Method (suppression)
-     * POURQUOI ResponseEntity<Void>: pas de body dans la réponse
+     * PATCH /api/vehicules/{id}/etat - Change l'état d'un véhicule
+     */
+    @PatchMapping("/{id}/etat")
+    public ResponseEntity<VehiculeDTO> changerEtatVehicule(
+            @PathVariable Long id,
+            @RequestParam EtatVehicule etat) {
+        Vehicule vehicule = vehiculeService.changerEtatVehicule(id, etat);
+        return ResponseEntity.ok(vehiculeMapper.toDTO(vehicule));
+    }
+    
+    /**
+     * DELETE /api/vehicules/{id} - Supprime un véhicule
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerVehicule(@PathVariable String id) {
+    public ResponseEntity<Void> supprimerVehicule(@PathVariable Long id) {
         vehiculeService.supprimerVehicule(id);
-        return ResponseEntity.noContent().build(); // HTTP 204 No Content (succès sans body)
-    }
-    
-    /**
-     * ========== ENDPOINT: GET /api/vehicules/search?marque=Peugeot ==========
-     * PATTERN: Query Parameter - Paramètre dans l'URL après "?"
-     * POURQUOI @RequestParam: extraction automatique du paramètre
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<Vehicule>> rechercherParMarque(
-            @RequestParam(required = false) String marque) { // required=false → paramètre optionnel
-        if (marque != null && !marque.isEmpty()) {
-            List<Vehicule> vehicules = vehiculeService.rechercherParMarque(marque);
-            return ResponseEntity.ok(vehicules);
-        }
-        return ResponseEntity.badRequest().build(); // HTTP 400 si marque manquante
-    }
-    
-    /**
-     * ========== ENDPOINT: GET /api/vehicules/recents?annee=2020 ==========
-     * PATTERN: Query Parameter avec valeur par défaut
-     */
-    @GetMapping("/recents")
-    public ResponseEntity<List<Vehicule>> obtenirVehiculesRecents(
-            @RequestParam(defaultValue = "2015") Integer annee) { // defaultValue si paramètre absent
-        List<Vehicule> vehicules = vehiculeService.obtenirVehiculesRecents(annee);
-        return ResponseEntity.ok(vehicules);
+        return ResponseEntity.noContent().build();
     }
 }
