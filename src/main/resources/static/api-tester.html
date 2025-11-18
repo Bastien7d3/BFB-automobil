@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API - BFB Automobile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            margin: 15px 0;
+            padding: 15px;
+        }
+        .method {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+            color: white;
+            font-size: 0.8em;
+        }
+        .get { background-color: #28a745; }
+        .post { background-color: #007bff; }
+        .put { background-color: #ffc107; color: #000; }
+        .patch { background-color: #6f42c1; }
+        .delete { background-color: #dc3545; }
+        
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .response {
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .flex {
+            display: flex;
+            gap: 20px;
+        }
+        .flex > div {
+            flex: 1;
+        }
+        .tabs {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .quick-actions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .quick-actions button {
+            background: #2196f3;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚗 Testeur d'API - BFB Automobile</h1>
+    
+    <div class="container quick-actions">
+        <h3>Actions rapides</h3>
+        <button onclick="loadSampleData()">Charger des données de test</button>
+        <button onclick="clearAllResponses()">Effacer toutes les réponses</button>
+        <button onclick="exportData()">Exporter les données</button>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('clients')">👥 Clients</div>
+        <div class="tab" onclick="showTab('vehicules')">🚗 Véhicules</div>
+        <div class="tab" onclick="showTab('contrats')">📋 Contrats</div>
+    </div>
+
+    <!-- CLIENTS TAB -->
+    <div id="clients" class="tab-content active">
+        <div class="container">
+            <h2>👥 Gestion des Clients</h2>
+            
+            <!-- GET /api/clients -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/clients</strong> - Récupérer tous les clients
+                <div class="form-group">
+                    <label>Nom (optionnel):</label>
+                    <input type="text" id="clients-filter-nom" placeholder="Dupont">
+                </div>
+                <div class="form-group">
+                    <label>Prénom (optionnel):</label>
+                    <input type="text" id="clients-filter-prenom" placeholder="Jean">
+                </div>
+                <div class="form-group">
+                    <label>Actifs seulement:</label>
+                    <select id="clients-filter-actif">
+                        <option value="">Tous</option>
+                        <option value="true">Actifs seulement</option>
+                    </select>
+                </div>
+                <button onclick="getAllClients()">Exécuter</button>
+                <div id="response-get-clients" class="response"></div>
+            </div>
+
+            <!-- GET /api/clients/{id} -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/clients/{id}</strong> - Récupérer un client par ID
+                <div class="form-group">
+                    <label>ID du client:</label>
+                    <input type="number" id="client-id" placeholder="1">
+                </div>
+                <button onclick="getClientById()">Exécuter</button>
+                <div id="response-get-client" class="response"></div>
+            </div>
+
+            <!-- GET /api/clients/permis/{numeroPermis} -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/clients/permis/{numeroPermis}</strong> - Rechercher par numéro de permis
+                <div class="form-group">
+                    <label>Numéro de permis:</label>
+                    <input type="text" id="client-numero-permis" placeholder="123456789">
+                </div>
+                <button onclick="getClientByPermis()">Exécuter</button>
+                <div id="response-get-client-permis" class="response"></div>
+            </div>
+
+            <!-- POST /api/clients -->
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/api/clients</strong> - Créer un nouveau client
+                <div class="flex">
+                    <div>
+                        <div class="form-group">
+                            <label>Nom:</label>
+                            <input type="text" id="new-client-nom" placeholder="Dupont">
+                        </div>
+                        <div class="form-group">
+                            <label>Prénom:</label>
+                            <input type="text" id="new-client-prenom" placeholder="Jean">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de naissance:</label>
+                            <input type="date" id="new-client-date-naissance">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Numéro de permis:</label>
+                            <input type="text" id="new-client-numero-permis" placeholder="123456789">
+                        </div>
+                        <div class="form-group">
+                            <label>Adresse:</label>
+                            <textarea id="new-client-adresse" placeholder="10 rue de la Paix, 75001 Paris"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="createClient()">Créer Client</button>
+                <div id="response-create-client" class="response"></div>
+            </div>
+
+            <!-- PUT /api/clients/{id} -->
+            <div class="endpoint">
+                <span class="method put">PUT</span> <strong>/api/clients/{id}</strong> - Mettre à jour un client
+                <div class="form-group">
+                    <label>ID du client à modifier:</label>
+                    <input type="number" id="update-client-id" placeholder="1">
+                </div>
+                <div class="flex">
+                    <div>
+                        <div class="form-group">
+                            <label>Nom:</label>
+                            <input type="text" id="update-client-nom" placeholder="Dupont">
+                        </div>
+                        <div class="form-group">
+                            <label>Prénom:</label>
+                            <input type="text" id="update-client-prenom" placeholder="Jean">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de naissance:</label>
+                            <input type="date" id="update-client-date-naissance">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Numéro de permis:</label>
+                            <input type="text" id="update-client-numero-permis" placeholder="123456789">
+                        </div>
+                        <div class="form-group">
+                            <label>Adresse:</label>
+                            <textarea id="update-client-adresse" placeholder="10 rue de la Paix, 75001 Paris"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="updateClient()">Mettre à jour</button>
+                <div id="response-update-client" class="response"></div>
+            </div>
+
+            <!-- DELETE /api/clients/{id} -->
+            <div class="endpoint">
+                <span class="method delete">DELETE</span> <strong>/api/clients/{id}</strong> - Désactiver un client
+                <div class="form-group">
+                    <label>ID du client à désactiver:</label>
+                    <input type="number" id="delete-client-id" placeholder="1">
+                </div>
+                <button onclick="deleteClient()">Désactiver</button>
+                <div id="response-delete-client" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VEHICULES TAB -->
+    <div id="vehicules" class="tab-content">
+        <div class="container">
+            <h2>🚗 Gestion des Véhicules</h2>
+            
+            <!-- GET /api/vehicules -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/vehicules</strong> - Récupérer tous les véhicules
+                <div class="form-group">
+                    <label>Marque (optionnel):</label>
+                    <input type="text" id="vehicules-filter-marque" placeholder="Peugeot">
+                </div>
+                <div class="form-group">
+                    <label>Modèle (optionnel):</label>
+                    <input type="text" id="vehicules-filter-modele" placeholder="308">
+                </div>
+                <div class="form-group">
+                    <label>État:</label>
+                    <select id="vehicules-filter-etat">
+                        <option value="">Tous</option>
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="EN_LOCATION">En location</option>
+                        <option value="EN_PANNE">En panne</option>
+                    </select>
+                </div>
+                <button onclick="getAllVehicules()">Exécuter</button>
+                <div id="response-get-vehicules" class="response"></div>
+            </div>
+
+            <!-- GET /api/vehicules/disponibles -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/vehicules/disponibles</strong> - Véhicules disponibles
+                <button onclick="getAvailableVehicules()">Exécuter</button>
+                <div id="response-get-available-vehicules" class="response"></div>
+            </div>
+
+            <!-- GET /api/vehicules/{id} -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/vehicules/{id}</strong> - Récupérer un véhicule par ID
+                <div class="form-group">
+                    <label>ID du véhicule:</label>
+                    <input type="number" id="vehicule-id" placeholder="1">
+                </div>
+                <button onclick="getVehiculeById()">Exécuter</button>
+                <div id="response-get-vehicule" class="response"></div>
+            </div>
+
+            <!-- GET /api/vehicules/immatriculation/{immatriculation} -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/vehicules/immatriculation/{immatriculation}</strong> - Rechercher par immatriculation
+                <div class="form-group">
+                    <label>Immatriculation:</label>
+                    <input type="text" id="vehicule-immatriculation" placeholder="AB-123-CD">
+                </div>
+                <button onclick="getVehiculeByImmatriculation()">Exécuter</button>
+                <div id="response-get-vehicule-immat" class="response"></div>
+            </div>
+
+            <!-- POST /api/vehicules -->
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/api/vehicules</strong> - Créer un nouveau véhicule
+                <div class="flex">
+                    <div>
+                        <div class="form-group">
+                            <label>Marque:</label>
+                            <input type="text" id="new-vehicule-marque" placeholder="Peugeot">
+                        </div>
+                        <div class="form-group">
+                            <label>Modèle:</label>
+                            <input type="text" id="new-vehicule-modele" placeholder="308">
+                        </div>
+                        <div class="form-group">
+                            <label>Motorisation:</label>
+                            <input type="text" id="new-vehicule-motorisation" placeholder="1.5 BlueHDi 130ch">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Couleur:</label>
+                            <input type="text" id="new-vehicule-couleur" placeholder="Gris">
+                        </div>
+                        <div class="form-group">
+                            <label>Immatriculation:</label>
+                            <input type="text" id="new-vehicule-immatriculation" placeholder="AB-123-CD">
+                        </div>
+                        <div class="form-group">
+                            <label>Date d'acquisition:</label>
+                            <input type="date" id="new-vehicule-date-acquisition">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="createVehicule()">Créer Véhicule</button>
+                <div id="response-create-vehicule" class="response"></div>
+            </div>
+
+            <!-- PATCH /api/vehicules/{id}/etat -->
+            <div class="endpoint">
+                <span class="method patch">PATCH</span> <strong>/api/vehicules/{id}/etat</strong> - Changer l'état d'un véhicule
+                <div class="form-group">
+                    <label>ID du véhicule:</label>
+                    <input type="number" id="change-vehicule-id" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label>Nouvel état:</label>
+                    <select id="change-vehicule-etat">
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="EN_LOCATION">En location</option>
+                        <option value="EN_PANNE">En panne</option>
+                    </select>
+                </div>
+                <button onclick="changeVehiculeEtat()">Changer État</button>
+                <div id="response-change-vehicule-etat" class="response"></div>
+            </div>
+
+            <!-- DELETE /api/vehicules/{id} -->
+            <div class="endpoint">
+                <span class="method delete">DELETE</span> <strong>/api/vehicules/{id}</strong> - Supprimer un véhicule
+                <div class="form-group">
+                    <label>ID du véhicule à supprimer:</label>
+                    <input type="number" id="delete-vehicule-id" placeholder="1">
+                </div>
+                <button onclick="deleteVehicule()">Supprimer</button>
+                <div id="response-delete-vehicule" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTRATS TAB -->
+    <div id="contrats" class="tab-content">
+        <div class="container">
+            <h2>📋 Gestion des Contrats</h2>
+            
+            <!-- GET /api/contrats -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/contrats</strong> - Récupérer tous les contrats
+                <div class="form-group">
+                    <label>État:</label>
+                    <select id="contrats-filter-etat">
+                        <option value="">Tous</option>
+                        <option value="EN_ATTENTE">En attente</option>
+                        <option value="EN_COURS">En cours</option>
+                        <option value="TERMINE">Terminé</option>
+                        <option value="EN_RETARD">En retard</option>
+                        <option value="ANNULE">Annulé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ID Client (optionnel):</label>
+                    <input type="number" id="contrats-filter-client" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label>ID Véhicule (optionnel):</label>
+                    <input type="number" id="contrats-filter-vehicule" placeholder="1">
+                </div>
+                <button onclick="getAllContrats()">Exécuter</button>
+                <div id="response-get-contrats" class="response"></div>
+            </div>
+
+            <!-- GET /api/contrats/actifs -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/contrats/actifs</strong> - Contrats actifs
+                <button onclick="getActiveContrats()">Exécuter</button>
+                <div id="response-get-active-contrats" class="response"></div>
+            </div>
+
+            <!-- GET /api/contrats/{id} -->
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/contrats/{id}</strong> - Récupérer un contrat par ID
+                <div class="form-group">
+                    <label>ID du contrat:</label>
+                    <input type="number" id="contrat-id" placeholder="1">
+                </div>
+                <button onclick="getContratById()">Exécuter</button>
+                <div id="response-get-contrat" class="response"></div>
+            </div>
+
+            <!-- POST /api/contrats -->
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/api/contrats</strong> - Créer un nouveau contrat
+                <div class="flex">
+                    <div>
+                        <div class="form-group">
+                            <label>ID Client:</label>
+                            <input type="number" id="new-contrat-client-id" placeholder="1">
+                        </div>
+                        <div class="form-group">
+                            <label>ID Véhicule:</label>
+                            <input type="number" id="new-contrat-vehicule-id" placeholder="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de début:</label>
+                            <input type="date" id="new-contrat-date-debut">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Date de fin:</label>
+                            <input type="date" id="new-contrat-date-fin">
+                        </div>
+                        <div class="form-group">
+                            <label>Commentaire:</label>
+                            <textarea id="new-contrat-commentaire" placeholder="Location pour voyage professionnel"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="createContrat()">Créer Contrat</button>
+                <div id="response-create-contrat" class="response"></div>
+            </div>
+
+            <!-- PATCH /api/contrats/{id}/annuler -->
+            <div class="endpoint">
+                <span class="method patch">PATCH</span> <strong>/api/contrats/{id}/annuler</strong> - Annuler un contrat
+                <div class="form-group">
+                    <label>ID du contrat:</label>
+                    <input type="number" id="annuler-contrat-id" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label>Motif d'annulation:</label>
+                    <input type="text" id="annuler-contrat-motif" placeholder="Demande client">
+                </div>
+                <button onclick="annulerContrat()">Annuler Contrat</button>
+                <div id="response-annuler-contrat" class="response"></div>
+            </div>
+
+            <!-- PATCH /api/contrats/{id}/terminer -->
+            <div class="endpoint">
+                <span class="method patch">PATCH</span> <strong>/api/contrats/{id}/terminer</strong> - Terminer un contrat
+                <div class="form-group">
+                    <label>ID du contrat:</label>
+                    <input type="number" id="terminer-contrat-id" placeholder="1">
+                </div>
+                <button onclick="terminerContrat()">Terminer Contrat</button>
+                <div id="response-terminer-contrat" class="response"></div>
+            </div>
+
+            <!-- POST /api/contrats/traiter-etats -->
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/api/contrats/traiter-etats</strong> - Traitement automatique des états
+                <button onclick="traiterEtatsContrats()">Traiter États</button>
+                <div id="response-traiter-etats" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Gestion des onglets
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Fonction utilitaire pour faire des requêtes
+        async function makeRequest(method, url, data = null, responseElementId) {
+            const responseElement = document.getElementById(responseElementId);
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                responseElement.textContent = 'Chargement...';
+                responseElement.className = 'response';
+                
+                const response = await fetch(url, options);
+                const responseText = await response.text();
+                
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch {
+                    responseData = responseText;
+                }
+                
+                const timestamp = new Date().toLocaleTimeString();
+                responseElement.textContent = `[${timestamp}] ${response.status} ${response.statusText}\n\n${JSON.stringify(responseData, null, 2)}`;
+                responseElement.className = response.ok ? 'response success' : 'response error';
+                
+            } catch (error) {
+                const timestamp = new Date().toLocaleTimeString();
+                responseElement.textContent = `[${timestamp}] Erreur: ${error.message}`;
+                responseElement.className = 'response error';
+            }
+        }
+
+        // Actions rapides
+        async function loadSampleData() {
+            // Créer quelques clients de test
+            await makeRequest('POST', `${API_BASE}/clients`, {
+                nom: "Dupont",
+                prenom: "Jean",
+                dateNaissance: "1985-03-15",
+                numeroPermis: "123456789",
+                adresse: "10 rue de la Paix, 75001 Paris"
+            }, 'response-create-client');
+
+            await makeRequest('POST', `${API_BASE}/clients`, {
+                nom: "Martin",
+                prenom: "Sophie",
+                dateNaissance: "1990-07-22",
+                numeroPermis: "987654321",
+                adresse: "25 avenue des Champs, 69001 Lyon"
+            }, 'response-create-client');
+
+            // Créer quelques véhicules de test
+            await makeRequest('POST', `${API_BASE}/vehicules`, {
+                marque: "Peugeot",
+                modele: "308",
+                motorisation: "1.5 BlueHDi 130ch",
+                couleur: "Gris",
+                immatriculation: "AB-123-CD",
+                dateAcquisition: "2023-01-15"
+            }, 'response-create-vehicule');
+
+            await makeRequest('POST', `${API_BASE}/vehicules`, {
+                marque: "Renault",
+                modele: "Clio",
+                motorisation: "1.0 TCe 90ch",
+                couleur: "Blanc",
+                immatriculation: "EF-456-GH",
+                dateAcquisition: "2023-03-20"
+            }, 'response-create-vehicule');
+
+            alert('Données de test créées !');
+        }
+
+        function clearAllResponses() {
+            document.querySelectorAll('.response').forEach(el => {
+                el.textContent = '';
+                el.className = 'response';
+            });
+        }
+
+        function exportData() {
+            const data = {
+                clients: document.getElementById('response-get-clients').textContent,
+                vehicules: document.getElementById('response-get-vehicules').textContent,
+                contrats: document.getElementById('response-get-contrats').textContent
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bfb-automobile-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ===== CLIENTS =====
+        function getAllClients() {
+            const params = new URLSearchParams();
+            const nom = document.getElementById('clients-filter-nom').value;
+            const prenom = document.getElementById('clients-filter-prenom').value;
+            const actif = document.getElementById('clients-filter-actif').value;
+            
+            if (nom) params.append('nom', nom);
+            if (prenom) params.append('prenom', prenom);
+            if (actif) params.append('actif', actif);
+            
+            const url = `${API_BASE}/clients${params.toString() ? '?' + params.toString() : ''}`;
+            makeRequest('GET', url, null, 'response-get-clients');
+        }
+
+        function getClientById() {
+            const id = document.getElementById('client-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            makeRequest('GET', `${API_BASE}/clients/${id}`, null, 'response-get-client');
+        }
+
+        function getClientByPermis() {
+            const numeroPermis = document.getElementById('client-numero-permis').value;
+            if (!numeroPermis) {
+                alert('Veuillez saisir un numéro de permis');
+                return;
+            }
+            makeRequest('GET', `${API_BASE}/clients/permis/${numeroPermis}`, null, 'response-get-client-permis');
+        }
+
+        function createClient() {
+            const data = {
+                nom: document.getElementById('new-client-nom').value,
+                prenom: document.getElementById('new-client-prenom').value,
+                dateNaissance: document.getElementById('new-client-date-naissance').value,
+                numeroPermis: document.getElementById('new-client-numero-permis').value,
+                adresse: document.getElementById('new-client-adresse').value
+            };
+            
+            if (!data.nom || !data.prenom || !data.dateNaissance || !data.numeroPermis || !data.adresse) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            makeRequest('POST', `${API_BASE}/clients`, data, 'response-create-client');
+        }
+
+        function updateClient() {
+            const id = document.getElementById('update-client-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            
+            const data = {
+                nom: document.getElementById('update-client-nom').value,
+                prenom: document.getElementById('update-client-prenom').value,
+                dateNaissance: document.getElementById('update-client-date-naissance').value,
+                numeroPermis: document.getElementById('update-client-numero-permis').value,
+                adresse: document.getElementById('update-client-adresse').value
+            };
+            
+            makeRequest('PUT', `${API_BASE}/clients/${id}`, data, 'response-update-client');
+        }
+
+        function deleteClient() {
+            const id = document.getElementById('delete-client-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            
+            if (confirm('Êtes-vous sûr de vouloir désactiver ce client ?')) {
+                makeRequest('DELETE', `${API_BASE}/clients/${id}`, null, 'response-delete-client');
+            }
+        }
+
+        // ===== VEHICULES =====
+        function getAllVehicules() {
+            const params = new URLSearchParams();
+            const marque = document.getElementById('vehicules-filter-marque').value;
+            const modele = document.getElementById('vehicules-filter-modele').value;
+            const etat = document.getElementById('vehicules-filter-etat').value;
+            
+            if (marque) params.append('marque', marque);
+            if (modele) params.append('modele', modele);
+            if (etat) params.append('etat', etat);
+            
+            const url = `${API_BASE}/vehicules${params.toString() ? '?' + params.toString() : ''}`;
+            makeRequest('GET', url, null, 'response-get-vehicules');
+        }
+
+        function getAvailableVehicules() {
+            makeRequest('GET', `${API_BASE}/vehicules/disponibles`, null, 'response-get-available-vehicules');
+        }
+
+        function getVehiculeById() {
+            const id = document.getElementById('vehicule-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            makeRequest('GET', `${API_BASE}/vehicules/${id}`, null, 'response-get-vehicule');
+        }
+
+        function getVehiculeByImmatriculation() {
+            const immat = document.getElementById('vehicule-immatriculation').value;
+            if (!immat) {
+                alert('Veuillez saisir une immatriculation');
+                return;
+            }
+            makeRequest('GET', `${API_BASE}/vehicules/immatriculation/${immat}`, null, 'response-get-vehicule-immat');
+        }
+
+        function createVehicule() {
+            const data = {
+                marque: document.getElementById('new-vehicule-marque').value,
+                modele: document.getElementById('new-vehicule-modele').value,
+                motorisation: document.getElementById('new-vehicule-motorisation').value,
+                couleur: document.getElementById('new-vehicule-couleur').value,
+                immatriculation: document.getElementById('new-vehicule-immatriculation').value,
+                dateAcquisition: document.getElementById('new-vehicule-date-acquisition').value
+            };
+            
+            if (!data.marque || !data.modele || !data.motorisation || !data.couleur || !data.immatriculation || !data.dateAcquisition) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            makeRequest('POST', `${API_BASE}/vehicules`, data, 'response-create-vehicule');
+        }
+
+        function changeVehiculeEtat() {
+            const id = document.getElementById('change-vehicule-id').value;
+            const etat = document.getElementById('change-vehicule-etat').value;
+            
+            if (!id || !etat) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            makeRequest('PATCH', `${API_BASE}/vehicules/${id}/etat?etat=${etat}`, null, 'response-change-vehicule-etat');
+        }
+
+        function deleteVehicule() {
+            const id = document.getElementById('delete-vehicule-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) {
+                makeRequest('DELETE', `${API_BASE}/vehicules/${id}`, null, 'response-delete-vehicule');
+            }
+        }
+
+        // ===== CONTRATS =====
+        function getAllContrats() {
+            const params = new URLSearchParams();
+            const etat = document.getElementById('contrats-filter-etat').value;
+            const clientId = document.getElementById('contrats-filter-client').value;
+            const vehiculeId = document.getElementById('contrats-filter-vehicule').value;
+            
+            if (etat) params.append('etat', etat);
+            if (clientId) params.append('clientId', clientId);
+            if (vehiculeId) params.append('vehiculeId', vehiculeId);
+            
+            const url = `${API_BASE}/contrats${params.toString() ? '?' + params.toString() : ''}`;
+            makeRequest('GET', url, null, 'response-get-contrats');
+        }
+
+        function getActiveContrats() {
+            makeRequest('GET', `${API_BASE}/contrats/actifs`, null, 'response-get-active-contrats');
+        }
+
+        function getContratById() {
+            const id = document.getElementById('contrat-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            makeRequest('GET', `${API_BASE}/contrats/${id}`, null, 'response-get-contrat');
+        }
+
+        function createContrat() {
+            const data = {
+                clientId: parseInt(document.getElementById('new-contrat-client-id').value),
+                vehiculeId: parseInt(document.getElementById('new-contrat-vehicule-id').value),
+                dateDebut: document.getElementById('new-contrat-date-debut').value,
+                dateFin: document.getElementById('new-contrat-date-fin').value,
+                commentaire: document.getElementById('new-contrat-commentaire').value
+            };
+            
+            if (!data.clientId || !data.vehiculeId || !data.dateDebut || !data.dateFin) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            makeRequest('POST', `${API_BASE}/contrats`, data, 'response-create-contrat');
+        }
+
+        function annulerContrat() {
+            const id = document.getElementById('annuler-contrat-id').value;
+            const motif = document.getElementById('annuler-contrat-motif').value;
+            
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            
+            const url = `${API_BASE}/contrats/${id}/annuler${motif ? '?motif=' + encodeURIComponent(motif) : ''}`;
+            makeRequest('PATCH', url, null, 'response-annuler-contrat');
+        }
+
+        function terminerContrat() {
+            const id = document.getElementById('terminer-contrat-id').value;
+            if (!id) {
+                alert('Veuillez saisir un ID');
+                return;
+            }
+            makeRequest('PATCH', `${API_BASE}/contrats/${id}/terminer`, null, 'response-terminer-contrat');
+        }
+
+        function traiterEtatsContrats() {
+            makeRequest('POST', `${API_BASE}/contrats/traiter-etats`, null, 'response-traiter-etats');
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Définir des valeurs par défaut pour les dates
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+
+            // Date de naissance par défaut (25 ans)
+            const birthDate = new Date(today);
+            birthDate.setFullYear(birthDate.getFullYear() - 25);
+            
+            document.getElementById('new-client-date-naissance').value = birthDate.toISOString().split('T')[0];
+            document.getElementById('update-client-date-naissance').value = birthDate.toISOString().split('T')[0];
+            
+            document.getElementById('new-vehicule-date-acquisition').value = today.toISOString().split('T')[0];
+            
+            document.getElementById('new-contrat-date-debut').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('new-contrat-date-fin').value = nextWeek.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
