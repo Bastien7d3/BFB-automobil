@@ -17,6 +17,12 @@ import java.util.stream.Collectors;
 /**
  * Contrôleur REST pour la gestion des véhicules
  * Expose les endpoints de l'API pour les opérations CRUD sur les véhicules
+ * 
+ * DESIGN PATTERNS GoF UTILISÉS : (identiques à ClientController)
+ * - FACADE PATTERN : Simplifie l'accès aux opérations métier des véhicules
+ * - ADAPTER PATTERN : VehiculeMapper convertit entre Vehicule et VehiculeDTO
+ * - SINGLETON PATTERN : Instance unique créée par Spring
+ * - STRATEGY PATTERN : Routage HTTP par Spring MVC
  */
 @RestController
 @RequestMapping("/api/vehicules")

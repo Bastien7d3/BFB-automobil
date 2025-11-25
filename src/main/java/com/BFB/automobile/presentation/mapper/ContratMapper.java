@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper pour convertir entre Contrat et ContratDTO
+ * Mapper pour convertir entre Contrat (entité JPA) et ContratDTO (représentation API)
+ * 
+ * DESIGN PATTERN GoF : ADAPTER PATTERN
+ * Adapte les objets Contrat avec leurs relations (Client, Vehicule) vers ContratDTO
+ * Utilise ClientMapper et VehiculeMapper pour adapter les relations (Composition d'Adapters)
  */
 @Component
 public class ContratMapper {

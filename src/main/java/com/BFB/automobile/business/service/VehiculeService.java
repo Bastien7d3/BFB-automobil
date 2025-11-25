@@ -21,6 +21,15 @@ import java.util.Optional;
  * - Un véhicule doit être unique (par immatriculation)
  * - Les véhicules en panne ne peuvent pas être loués
  * - Si un véhicule est déclaré en panne, les contrats en attente doivent être annulés
+ * 
+ * DESIGN PATTERNS GoF UTILISÉS :
+ * - FACADE PATTERN : Encapsule la logique métier des véhicules
+ * - STRATEGY PATTERN : @Transactional pour la gestion des transactions
+ * - SINGLETON PATTERN : Instance unique créée par Spring
+ * - TEMPLATE METHOD PATTERN : Algorithme de traitement standardisé
+ * - OBSERVER PATTERN (implicite) : Annulation automatique des contrats quand un véhicule
+ *   passe en panne (la méthode changerEtatVehicule observe le changement et déclenche
+ *   une action sur les contrats en attente)
  */
 @Service
 @Transactional

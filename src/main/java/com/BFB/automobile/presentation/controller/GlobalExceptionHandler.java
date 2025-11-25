@@ -15,6 +15,17 @@ import java.util.Map;
 /**
  * Gestionnaire global des exceptions pour les contrôleurs REST
  * Transforme les exceptions en réponses HTTP appropriées
+ * 
+ * DESIGN PATTERNS GoF UTILISÉS :
+ * 
+ * 1. ADAPTER PATTERN : Adapte les exceptions Java vers des réponses HTTP
+ *    (BusinessException → HTTP 400, ValidationException → HTTP 422, etc.)
+ * 
+ * 2. CHAIN OF RESPONSIBILITY PATTERN (implicite) : Spring parcourt les méthodes
+ *    @ExceptionHandler jusqu'à trouver celle qui correspond au type d'exception.
+ *    C'est une chaîne de responsabilité gérée automatiquement par Spring.
+ * 
+ * 3. SINGLETON PATTERN : Une seule instance gère toutes les exceptions de l'application
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

@@ -5,7 +5,19 @@ import com.BFB.automobile.presentation.dto.ClientDTO;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper pour convertir entre Client et ClientDTO
+ * Mapper pour convertir entre Client (entité JPA) et ClientDTO (représentation API)
+ * 
+ * DESIGN PATTERN GoF UTILISÉ :
+ * 
+ * ADAPTER PATTERN : Ce mapper adapte les objets d'un format à un autre.
+ * - toDTO() : adapte Client (format interne/base de données) vers ClientDTO (format API/externe)
+ * - toEntity() : adapte ClientDTO (format API) vers Client (format interne)
+ * 
+ * Avantages de ce pattern :
+ * - Découple la structure interne (entités JPA) de l'API REST
+ * - Évite les références circulaires lors de la sérialisation JSON
+ * - Permet de masquer des champs sensibles (ex: ne pas exposer certains champs internes)
+ * - Facilite l'évolution indépendante de la base de données et de l'API
  */
 @Component
 public class ClientMapper {

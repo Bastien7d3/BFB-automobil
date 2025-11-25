@@ -17,6 +17,24 @@ import java.util.Optional;
  * Implémente les règles métier :
  * - Un client doit être unique (nom + prénom + date de naissance)
  * - Deux clients distincts ne peuvent pas avoir le même numéro de permis
+ * 
+ * DESIGN PATTERNS GoF UTILISÉS :
+ * 
+ * 1. FACADE PATTERN : Encapsule la logique métier complexe (validations,
+ *    vérifications d'unicité, gestion des transactions) derrière une interface
+ *    simple pour les contrôleurs.
+ * 
+ * 2. STRATEGY PATTERN : @Transactional utilise le Strategy Pattern pour gérer
+ *    les transactions (begin/commit/rollback). Spring injecte dynamiquement
+ *    la stratégie de gestion transactionnelle selon le contexte.
+ *    - @Transactional = stratégie lecture-écriture
+ *    - @Transactional(readOnly = true) = stratégie lecture optimisée
+ * 
+ * 3. SINGLETON PATTERN : Spring crée une instance unique de ce service
+ *    (@Service = @Component avec sémantique métier).
+ * 
+ * 4. TEMPLATE METHOD PATTERN (implicite) : Les méthodes publiques définissent
+ *    un algorithme de traitement avec des étapes fixes (validation → traitement → persistance).
  */
 @Service
 @Transactional
@@ -24,6 +42,9 @@ public class ClientService {
     
     private final ClientRepository clientRepository;
     
+    /**
+     * Injection par constructeur recommandée (immutabilité + testabilité)
+     */
     @Autowired
     public ClientService(ClientRepository clientRepository) {
         this.clientRepository = clientRepository;
