@@ -2,150 +2,284 @@ package com.BFB.automobile.data.repository;
 
 import com.BFB.automobile.data.Client;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests d'intégration pour ClientRepository
- * 
- * JUSTIFICATION COUCHE DATA :
- * - Valide les requêtes JPA personnalisées
- * - Teste les contraintes de base de données
- * - Vérifie l'intégrité des données
- * - Tests avec vraie base H2 en mémoire
+ * Utilise @DataJpaTest pour tester avec une vraie base de données H2
  */
 @DataJpaTest
-@DisplayName("ClientRepository - Tests d'intégration")
+@TestPropertySource(properties = {
+    "spring.sql.init.mode=never"
+})
+@Transactional
 class ClientRepositoryTest {
-
+    
     @Autowired
     private TestEntityManager entityManager;
-
+    
     @Autowired
     private ClientRepository clientRepository;
-
+    
     private Client client1;
     private Client client2;
-
+    
     @BeforeEach
     void setUp() {
         client1 = new Client();
         client1.setNom("Dupont");
         client1.setPrenom("Jean");
-        client1.setDateNaissance(LocalDate.of(1990, 1, 1));
-        client1.setNumeroPermis("PERM123456");
-        client1.setAdresse("123 Rue de la Paix");
-        client1.setTelephone("0123456789");
-        client1.setEmail("jean.dupont@email.com");
-
+        client1.setDateNaissance(LocalDate.of(1990, 5, 15));
+        client1.setNumeroPermis("111111111");
+        client1.setAdresse("10 Rue de la Paix, 75001 Paris");
+        client1.setActif(true);
+        
         client2 = new Client();
         client2.setNom("Martin");
         client2.setPrenom("Sophie");
-        client2.setDateNaissance(LocalDate.of(1985, 5, 15));
-        client2.setNumeroPermis("PERM789123");
-        client2.setAdresse("456 Avenue des Fleurs");
-        client2.setTelephone("0987654321");
-        client2.setEmail("sophie.martin@email.com");
+        client2.setDateNaissance(LocalDate.of(1985, 8, 20));
+        client2.setNumeroPermis("222222222");
+        client2.setAdresse("25 Avenue des Champs, 69000 Lyon");
+        client2.setActif(true);
     }
-
+    
+    // ========== Tests de sauvegarde ==========
+    
     @Test
-    @DisplayName("Devrait sauvegarder et récupérer un client")
-    void saveAndFindById_ShouldWork() {
-        // When
-        Client savedClient = clientRepository.save(client1);
-        Client foundClient = clientRepository.findById(savedClient.getId()).orElse(null);
-
-        // Then
-        assertThat(foundClient).isNotNull();
-        assertThat(foundClient.getNom()).isEqualTo("Dupont");
-        assertThat(foundClient.getPrenom()).isEqualTo("Jean");
-        assertThat(foundClient.getNumeroPermis()).isEqualTo("PERM123456");
+    void save_devraitPersisterClient() {
+        // Arrange
+        client1.setNumeroPermis("444444444");
+        
+        // Act
+        Client saved = clientRepository.save(client1);
+        
+        // Assert
+        assertNotNull(saved.getId());
+        assertEquals("Dupont", saved.getNom());
+        assertEquals("Jean", saved.getPrenom());
+        assertNotNull(saved.getDateCreation());
     }
-
+    
+    // ========== Tests d'unicité ==========
+    
     @Test
-    @DisplayName("Devrait détecter un client existant par nom, prénom et date de naissance")
-    void existsByNomAndPrenomAndDateNaissance_ShouldReturnTrue() {
-        // Given
-        entityManager.persistAndFlush(client1);
-
-        // When
-        boolean exists = clientRepository.existsByNomAndPrenomAndDateNaissance(
-            "Dupont", "Jean", LocalDate.of(1990, 1, 1));
-
-        // Then
-        assertThat(exists).isTrue();
-    }
-
-    @Test
-    @DisplayName("Devrait retourner false pour un client inexistant")
-    void existsByNomAndPrenomAndDateNaissance_ShouldReturnFalse() {
-        // When
-        boolean exists = clientRepository.existsByNomAndPrenomAndDateNaissance(
-            "Inexistant", "Client", LocalDate.of(2000, 1, 1));
-
-        // Then
-        assertThat(exists).isFalse();
-    }
-
-    @Test
-    @DisplayName("Devrait détecter un numéro de permis existant")
-    void existsByNumeroPermis_ShouldReturnTrue() {
-        // Given
-        entityManager.persistAndFlush(client1);
-
-        // When
-        boolean exists = clientRepository.existsByNumeroPermis("PERM123456");
-
-        // Then
-        assertThat(exists).isTrue();
-    }
-
-    @Test
-    @DisplayName("Devrait retourner false pour un numéro de permis inexistant")
-    void existsByNumeroPermis_ShouldReturnFalse() {
-        // When
-        boolean exists = clientRepository.existsByNumeroPermis("PERMXXXX");
-
-        // Then
-        assertThat(exists).isFalse();
-    }
-
-    @Test
-    @DisplayName("Devrait retourner tous les clients")
-    void findAll_ShouldReturnAllClients() {
-        // Given
-        entityManager.persistAndFlush(client1);
-        entityManager.persistAndFlush(client2);
-
-        // When
-        List<Client> clients = clientRepository.findAll();
-
-        // Then
-        assertThat(clients).hasSize(2);
-        assertThat(clients).extracting(Client::getNom)
-            .containsExactlyInAnyOrder("Dupont", "Martin");
-    }
-
-    @Test
-    @DisplayName("Devrait supprimer un client")
-    void deleteById_ShouldRemoveClient() {
-        // Given
-        Client savedClient = entityManager.persistAndFlush(client1);
-        Long clientId = savedClient.getId();
-
-        // When
-        clientRepository.deleteById(clientId);
+    void existsByNomAndPrenomAndDateNaissance_devraitRetournerTrue_siClientExiste() {
+        // Arrange
+        client1.setNumeroPermis("333333333");
+        entityManager.persist(client1);
         entityManager.flush();
-
-        // Then
-        assertThat(clientRepository.findById(clientId)).isEmpty();
+        
+        // Act
+        boolean exists = clientRepository.existsByNomAndPrenomAndDateNaissance(
+            "Dupont", "Jean", LocalDate.of(1990, 5, 15));
+        
+        // Assert
+        assertTrue(exists);
+    }
+    
+    @Test
+    void existsByNomAndPrenomAndDateNaissance_devraitRetournerFalse_siClientNExistePas() {
+        // Act
+        boolean exists = clientRepository.existsByNomAndPrenomAndDateNaissance(
+            "Inconnu", "Test", LocalDate.of(2000, 1, 1));
+        
+        // Assert
+        assertFalse(exists);
+    }
+    
+    @Test
+    void existsByNumeroPermis_devraitRetournerTrue_siPermisExiste() {
+        // Arrange
+        client1.setNumeroPermis("234567890");
+        entityManager.persist(client1);
+        entityManager.flush();
+        
+        // Act
+        boolean exists = clientRepository.existsByNumeroPermis("234567890");
+        
+        // Assert
+        assertTrue(exists);
+    }
+    
+    @Test
+    void existsByNumeroPermis_devraitRetournerFalse_siPermisNExistePas() {
+        // Act
+        boolean exists = clientRepository.existsByNumeroPermis("000000000");
+        
+        // Assert
+        assertFalse(exists);
+    }
+    
+    // ========== Tests de recherche par numéro de permis ==========
+    
+    @Test
+    void findByNumeroPermis_devraitRetournerClient_siExiste() {
+        // Arrange
+        client1.setNumeroPermis("345678901");
+        entityManager.persist(client1);
+        entityManager.flush();
+        
+        // Act
+        Optional<Client> result = clientRepository.findByNumeroPermis("345678901");
+        
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Dupont", result.get().getNom());
+        assertEquals("Jean", result.get().getPrenom());
+    }
+    
+    @Test
+    void findByNumeroPermis_devraitRetournerEmpty_siNExistePas() {
+        // Act
+        Optional<Client> result = clientRepository.findByNumeroPermis("000000000");
+        
+        // Assert
+        assertFalse(result.isPresent());
+    }
+    
+    // ========== Tests de recherche par actif ==========
+    
+    @Test
+    void findByActifTrue_devraitRetournerSeulementClientsActifs() {
+        // Arrange
+        client1.setNumeroPermis("666666666");
+        client2.setNumeroPermis("777777777");
+        client2.setActif(false);
+        entityManager.persist(client1);
+        entityManager.persist(client2);
+        entityManager.flush();
+        
+        // Act
+        List<Client> actifs = clientRepository.findByActifTrue();
+        
+        // Assert
+        assertEquals(1, actifs.size());
+        assertEquals("Dupont", actifs.get(0).getNom());
+    }
+    
+    // ========== Tests de recherche par nom et prénom ==========
+    
+    @Test
+    void findByNomContainingIgnoreCaseAndPrenomContainingIgnoreCase_devraitTrouverParNomEtPrenom() {
+        // Arrange
+        client1.setNumeroPermis("888888888");
+        client2.setNumeroPermis("999999999");
+        entityManager.persist(client1);
+        entityManager.persist(client2);
+        entityManager.flush();
+        
+        // Act
+        List<Client> results = clientRepository
+            .searchByNomAndPrenom("dupont", "jean");
+        
+        // Assert
+        assertEquals(1, results.size());
+        assertEquals("Dupont", results.get(0).getNom());
+    }
+    
+    @Test
+    void findByNomContainingIgnoreCaseAndPrenomContainingIgnoreCase_devraitIgnorerLaCasse() {
+        // Arrange
+        client1.setNumeroPermis("101010101");
+        entityManager.persist(client1);
+        entityManager.flush();
+        
+        // Act
+        List<Client> results = clientRepository
+            .searchByNomAndPrenom("DUPONT", "JEAN");
+        
+        // Assert
+        assertEquals(1, results.size());
+    }
+    
+    @Test
+    void findByNomContainingIgnoreCase_devraitTrouverParNomSeul() {
+        // Arrange
+        client1.setNumeroPermis("121212121");
+        client2.setNumeroPermis("131313131");
+        entityManager.persist(client1);
+        entityManager.persist(client2);
+        entityManager.flush();
+        
+        // Act
+        List<Client> results = clientRepository.findByNomContainingIgnoreCase("martin");
+        
+        // Assert
+        assertEquals(1, results.size());
+        assertEquals("Martin", results.get(0).getNom());
+    }
+    
+    @Test
+    void findByPrenomContainingIgnoreCase_devraitTrouverParPrenomSeul() {
+        // Arrange
+        client1.setNumeroPermis("141414141");
+        client2.setNumeroPermis("151515151");
+        entityManager.persist(client1);
+        entityManager.persist(client2);
+        entityManager.flush();
+        
+        // Act
+        List<Client> results = clientRepository.findByPrenomContainingIgnoreCase("sophie");
+        
+        // Assert
+        assertEquals(1, results.size());
+        assertEquals("Sophie", results.get(0).getPrenom());
+    }
+    
+    // ========== Tests de contraintes d'unicité ==========
+    
+    @Test
+    void save_devraitEchouer_siClientDuplique() {
+        // Arrange
+        client1.setNumeroPermis("555555555");
+        entityManager.persist(client1);
+        entityManager.flush();
+        
+        Client duplicate = new Client();
+        duplicate.setNom("Dupont");
+        duplicate.setPrenom("Jean");
+        duplicate.setDateNaissance(LocalDate.of(1990, 5, 15));
+        duplicate.setNumeroPermis("AUTRE_PERMIS");
+        duplicate.setAdresse("Autre adresse");
+        duplicate.setActif(true);
+        
+        // Act & Assert
+        assertThrows(Exception.class, () -> {
+            clientRepository.save(duplicate);
+            entityManager.flush();
+        });
+    }
+    
+    @Test
+    void save_devraitEchouer_siNumeroPermisDuplique() {
+        // Arrange
+        client1.setNumeroPermis("456789012");
+        entityManager.persist(client1);
+        entityManager.flush();
+        
+        Client duplicate = new Client();
+        duplicate.setNom("Autre");
+        duplicate.setPrenom("Personne");
+        duplicate.setDateNaissance(LocalDate.of(1995, 1, 1));
+        duplicate.setNumeroPermis("456789012"); // Même permis que client1
+        duplicate.setAdresse("Autre adresse");
+        duplicate.setActif(true);
+        
+        // Act & Assert
+        assertThrows(Exception.class, () -> {
+            clientRepository.save(duplicate);
+            entityManager.flush();
+        });
     }
 }

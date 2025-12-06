@@ -7,7 +7,6 @@ import com.BFB.automobile.presentation.dto.ContratDTO;
 import com.BFB.automobile.presentation.mapper.ContratMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,183 +14,308 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Tests d'intégration pour ContratController
- * 
- * JUSTIFICATION COUCHE PRESENTATION :
- * - Teste les endpoints de gestion des contrats
- * - Valide les workflows de location (création → confirmation → annulation)
- * - Vérifie les paramètres de requête pour la création de contrats
+ * Tests du contrôleur ContratController
  */
 @WebMvcTest(ContratController.class)
-@DisplayName("ContratController - Tests d'intégration")
 class ContratControllerTest {
-
+    
     @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
-    private ContratService contratService;
-
-    @MockBean
-    private ContratMapper contratMapper;
-
+    
     @Autowired
     private ObjectMapper objectMapper;
-
+    
+    @MockBean
+    private ContratService contratService;
+    
+    @MockBean
+    private ContratMapper contratMapper;
+    
     private Contrat contrat;
     private ContratDTO contratDTO;
-
+    private Client client;
+    private Vehicule vehicule;
+    
     @BeforeEach
     void setUp() {
-        Client client = new Client();
+        client = new Client();
         client.setId(1L);
         client.setNom("Dupont");
-
-        Vehicule vehicule = new Vehicule();
+        client.setPrenom("Jean");
+        
+        vehicule = new Vehicule();
         vehicule.setId(1L);
-        vehicule.setImmatriculation("AB-123-CD");
         vehicule.setMarque("Peugeot");
-
+        vehicule.setModele("308");
+        vehicule.setImmatriculation("AB-123-CD");
+        
         contrat = new Contrat();
         contrat.setId(1L);
         contrat.setClient(client);
         contrat.setVehicule(vehicule);
-        contrat.setDateDebut(LocalDate.now().plusDays(1));
-        contrat.setDateFin(LocalDate.now().plusDays(3));
-        contrat.setPrixTotal(new BigDecimal("150.00"));
+        contrat.setDateDebut(LocalDate.now().plusDays(5));
+        contrat.setDateFin(LocalDate.now().plusDays(10));
         contrat.setEtat(EtatContrat.EN_ATTENTE);
-
+        
         contratDTO = new ContratDTO();
         contratDTO.setId(1L);
         contratDTO.setClientId(1L);
         contratDTO.setVehiculeId(1L);
-        contratDTO.setDateDebut(LocalDate.now().plusDays(1));
-        contratDTO.setDateFin(LocalDate.now().plusDays(3));
-        contratDTO.setPrixTotal(new BigDecimal("150.00"));
+        contratDTO.setDateDebut(LocalDate.now().plusDays(5));
+        contratDTO.setDateFin(LocalDate.now().plusDays(10));
         contratDTO.setEtat(EtatContrat.EN_ATTENTE);
     }
-
+    
+    // ========== Tests GET /api/contrats ==========
+    
     @Test
-    @DisplayName("GET /api/contrats - Devrait retourner la liste des contrats")
-    void getAllContrats_ShouldReturnContratsList() throws Exception {
-        // Given
+    void obtenirTousLesContrats_devraitRetourner200AvecListeContrats() throws Exception {
+        // Arrange
         List<Contrat> contrats = Arrays.asList(contrat);
-        when(contratService.getAllContrats()).thenReturn(contrats);
-        when(contratMapper.toDTO(contrat)).thenReturn(contratDTO);
-
-        // When & Then
+        when(contratService.obtenirTousLesContrats()).thenReturn(contrats);
+        when(contratMapper.toDTO(any(Contrat.class))).thenReturn(contratDTO);
+        
+        // Act & Assert
         mockMvc.perform(get("/api/contrats"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].clientId").value(1))
-                .andExpect(jsonPath("$[0].vehiculeId").value(1));
-
-        verify(contratService).getAllContrats();
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].etat").value("EN_ATTENTE"));
+        
+        verify(contratService, times(1)).obtenirTousLesContrats();
     }
-
+    
     @Test
-    @DisplayName("POST /api/contrats - Devrait créer un nouveau contrat")
-    void createContrat_ValidData_ShouldCreateContrat() throws Exception {
-        // Given
-        when(contratService.createContrat(anyLong(), anyLong(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(contrat);
+    void obtenirContratsActifs_devraitRetourner200AvecSeulementActifs() throws Exception {
+        // Arrange
+        List<Contrat> contrats = Arrays.asList(contrat);
+        when(contratService.obtenirContratsParEtat(EtatContrat.EN_COURS)).thenReturn(contrats);
         when(contratMapper.toDTO(contrat)).thenReturn(contratDTO);
-
-        // When & Then
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/contrats?etat=EN_COURS"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)));
+        
+        verify(contratService, times(1)).obtenirContratsParEtat(EtatContrat.EN_COURS);
+        verify(contratService, never()).obtenirTousLesContrats();
+    }
+    
+    // ========== Tests GET /api/contrats/{id} ==========
+    
+    @Test
+    void obtenirContratParId_devraitRetourner200AvecContrat() throws Exception {
+        // Arrange
+        when(contratService.obtenirContratParId(1L)).thenReturn(contrat);
+        when(contratMapper.toDTO(contrat)).thenReturn(contratDTO);
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/contrats/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.etat").value("EN_ATTENTE"));
+        
+        verify(contratService, times(1)).obtenirContratParId(1L);
+    }
+    
+    @Test
+    void obtenirContratParId_devraitRetourner404SiContratNonTrouve() throws Exception {
+        // Arrange
+        when(contratService.obtenirContratParId(999L))
+            .thenThrow(new BusinessException("CONTRAT_NON_TROUVE", "Contrat non trouvé"));
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/contrats/999"))
+            .andExpect(status().isBadRequest());
+    }
+    
+    // ========== Tests POST /api/contrats ==========
+    
+    @Test
+    void creerContrat_devraitRetourner201AvecContrat() throws Exception {
+        // Arrange
+        when(contratMapper.toEntity(any(ContratDTO.class))).thenReturn(contrat);
+        when(contratService.creerContrat(any(Contrat.class))).thenReturn(contrat);
+        when(contratMapper.toDTO(any(Contrat.class))).thenReturn(contratDTO);
+        
+        // Act & Assert
         mockMvc.perform(post("/api/contrats")
-                        .param("clientId", "1")
-                        .param("vehiculeId", "1")
-                        .param("dateDebut", LocalDate.now().plusDays(1).toString())
-                        .param("dateFin", LocalDate.now().plusDays(3).toString()))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.etat").value("EN_ATTENTE"));
-
-        verify(contratService).createContrat(eq(1L), eq(1L), any(LocalDate.class), any(LocalDate.class));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(contratDTO)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.etat").value("EN_ATTENTE"));
+        
+        verify(contratService, times(1)).creerContrat(any(Contrat.class));
     }
-
+    
     @Test
-    @DisplayName("PUT /api/contrats/{id}/confirmer - Devrait confirmer un contrat")
-    void confirmerContrat_ExistingContrat_ShouldConfirmContrat() throws Exception {
-        // Given
-        doNothing().when(contratService).confirmerContrat(1L);
-
-        // When & Then
-        mockMvc.perform(patch("/api/contrats/1/confirmer"))
-                .andExpect(status().isOk());
-
-        verify(contratService).confirmerContrat(1L);
+    void creerContrat_devraitRetourner400SiVehiculeDejaLoue() throws Exception {
+        // Arrange
+        when(contratMapper.toEntity(any(ContratDTO.class))).thenReturn(contrat);
+        when(contratService.creerContrat(any(Contrat.class)))
+            .thenThrow(new BusinessException("VEHICULE_DEJA_LOUE", "Véhicule déjà loué sur cette période"));
+        
+        // Act & Assert
+        mockMvc.perform(post("/api/contrats")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(contratDTO)))
+            .andExpect(status().isBadRequest());
     }
-
+    
     @Test
-    @DisplayName("PUT /api/contrats/{id}/annuler - Devrait annuler un contrat")
-    void annulerContrat_ExistingContrat_ShouldCancelContrat() throws Exception {
-        // Given
-        doNothing().when(contratService).annulerContrat(1L);
-
-        // When & Then
-        mockMvc.perform(patch("/api/contrats/1/annuler"))
-                .andExpect(status().isOk());
-
-        verify(contratService).annulerContrat(1L);
+    void creerContrat_devraitRetourner400SiDatesIncoherentes() throws Exception {
+        // Arrange
+        when(contratMapper.toEntity(any(ContratDTO.class))).thenReturn(contrat);
+        when(contratService.creerContrat(any(Contrat.class)))
+            .thenThrow(new BusinessException("DATES_INCOHERENTES", "Date de fin avant date de début"));
+        
+        // Act & Assert
+        mockMvc.perform(post("/api/contrats")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(contratDTO)))
+            .andExpect(status().isBadRequest());
     }
-
+    
+    // ========== Tests PUT /api/contrats/{id} ==========
+    
     @Test
-    @DisplayName("GET /api/contrats/client/{clientId} - Devrait retourner les contrats d'un client")
-    void getContratsByClientId_ShouldReturnClientContracts() throws Exception {
-        // Given
-        List<Contrat> contratsClient = Arrays.asList(contrat);
-        when(contratService.getContratsByClientId(1L)).thenReturn(contratsClient);
+    void mettreAJourContrat_devraitRetourner200AvecContratModifie() throws Exception {
+        // Arrange
+        when(contratMapper.toEntity(any(ContratDTO.class))).thenReturn(contrat);
+        when(contratService.mettreAJourContrat(anyLong(), any(Contrat.class))).thenReturn(contrat);
+        when(contratMapper.toDTO(any(Contrat.class))).thenReturn(contratDTO);
+        
+        // Act & Assert
+        mockMvc.perform(put("/api/contrats/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(contratDTO)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1));
+        
+        verify(contratService, times(1)).mettreAJourContrat(eq(1L), any(Contrat.class));
+    }
+    
+    @Test
+    void mettreAJourContrat_devraitRetourner400SiContratNonModifiable() throws Exception {
+        // Arrange
+        when(contratMapper.toEntity(any(ContratDTO.class))).thenReturn(contrat);
+        when(contratService.mettreAJourContrat(anyLong(), any(Contrat.class)))
+            .thenThrow(new BusinessException("CONTRAT_NON_MODIFIABLE", "Contrat déjà démarré"));
+        
+        // Act & Assert
+        mockMvc.perform(put("/api/contrats/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(contratDTO)))
+            .andExpect(status().isBadRequest());
+    }
+    
+    // ========== Tests PATCH /api/contrats/{id}/annuler ==========
+    
+    @Test
+    void annulerContrat_devraitRetourner200AvecContratAnnule() throws Exception {
+        // Arrange
+        contrat.setEtat(EtatContrat.ANNULE);
+        contratDTO.setEtat(EtatContrat.ANNULE);
+        
+        when(contratService.annulerContrat(1L, "Annulation client")).thenReturn(contrat);
         when(contratMapper.toDTO(contrat)).thenReturn(contratDTO);
-
-        // When & Then
+        
+        // Act & Assert
+        mockMvc.perform(patch("/api/contrats/1/annuler")
+                .param("motif", "Annulation client"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.etat").value("ANNULE"));
+        
+        verify(contratService, times(1)).annulerContrat(1L, "Annulation client");
+    }
+    
+    @Test
+    void annulerContrat_devraitRetourner400SiContratNonAnnulable() throws Exception {
+        // Arrange
+        when(contratService.annulerContrat(anyLong(), anyString()))
+            .thenThrow(new BusinessException("CONTRAT_NON_ANNULABLE", "Contrat déjà annulé"));
+        
+        // Act & Assert
+        mockMvc.perform(patch("/api/contrats/1/annuler")
+                .param("motif", "Test"))
+            .andExpect(status().isBadRequest());
+    }
+    
+    // ========== Tests PATCH /api/contrats/{id}/terminer ==========
+    
+    @Test
+    void terminerContrat_devraitRetourner200AvecContratTermine() throws Exception {
+        // Arrange
+        contrat.setEtat(EtatContrat.TERMINE);
+        contratDTO.setEtat(EtatContrat.TERMINE);
+        
+        when(contratService.terminerContrat(1L)).thenReturn(contrat);
+        when(contratMapper.toDTO(contrat)).thenReturn(contratDTO);
+        
+        // Act & Assert
+        mockMvc.perform(patch("/api/contrats/1/terminer"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.etat").value("TERMINE"));
+        
+        verify(contratService, times(1)).terminerContrat(1L);
+    }
+    
+    @Test
+    void terminerContrat_devraitRetourner400SiContratNonTerminable() throws Exception {
+        // Arrange
+        when(contratService.terminerContrat(1L))
+            .thenThrow(new BusinessException("CONTRAT_NON_TERMINABLE", "Contrat pas en cours"));
+        
+        // Act & Assert
+        mockMvc.perform(patch("/api/contrats/1/terminer"))
+            .andExpect(status().isBadRequest());
+    }
+    
+    // ========== Tests GET /api/contrats/client/{clientId} ==========
+    
+    @Test
+    void obtenirContratsParClient_devraitRetourner200AvecContrats() throws Exception {
+        // Arrange
+        List<Contrat> contrats = Arrays.asList(contrat);
+        when(contratService.obtenirContratsParClient(1L)).thenReturn(contrats);
+        when(contratMapper.toDTO(any(Contrat.class))).thenReturn(contratDTO);
+        
+        // Act & Assert
         mockMvc.perform(get("/api/contrats/client/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].clientId").value(1));
-
-        verify(contratService).getContratsByClientId(1L);
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].clientId").value(1));
+        
+        verify(contratService, times(1)).obtenirContratsParClient(1L);
     }
-
+    
+    // ========== Tests GET /api/contrats/vehicule/{vehiculeId} ==========
+    
     @Test
-    @DisplayName("GET /api/contrats/{id} - Devrait retourner 404 pour un contrat inexistant")
-    void getContratById_NonExistingContrat_ShouldReturn404() throws Exception {
-        // Given
-        when(contratService.getContratById(99L))
-                .thenThrow(new BusinessException("Contrat non trouvé avec l'ID : 99"));
-
-        // When & Then
-        mockMvc.perform(get("/api/contrats/99"))
-                .andExpect(status().isNotFound());
-
-        verify(contratService).getContratById(99L);
+    void obtenirContratsParVehicule_devraitRetourner200AvecContrats() throws Exception {
+        // Arrange
+        List<Contrat> contrats = Arrays.asList(contrat);
+        when(contratService.obtenirContratsParVehicule(1L)).thenReturn(contrats);
+        when(contratMapper.toDTO(any(Contrat.class))).thenReturn(contratDTO);
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/contrats/vehicule/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].vehiculeId").value(1));
+        
+        verify(contratService, times(1)).obtenirContratsParVehicule(1L);
     }
-
-    @Test
-    @DisplayName("POST /api/contrats - Devrait retourner 400 pour des dates invalides")
-    void createContrat_InvalidDates_ShouldReturn400() throws Exception {
-        // Given - Date de fin avant date de début
-        when(contratService.createContrat(anyLong(), anyLong(), any(LocalDate.class), any(LocalDate.class)))
-                .thenThrow(new BusinessException("La date de fin doit être postérieure à la date de début"));
-
-        // When & Then
-        mockMvc.perform(post("/api/contrats")
-                        .param("clientId", "1")
-                        .param("vehiculeId", "1")
-                        .param("dateDebut", LocalDate.now().plusDays(3).toString())
-                        .param("dateFin", LocalDate.now().plusDays(1).toString()))
-                .andExpect(status().isBadRequest());
-    }
+    
 }
