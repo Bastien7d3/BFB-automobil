@@ -6,9 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Mapper pour convertir entre Vehicule (entité JPA) et VehiculeDTO (représentation API)
- * 
- * DESIGN PATTERN GoF : ADAPTER PATTERN
- * Adapte les objets Vehicule (format base de données) vers VehiculeDTO (format API)
  */
 @Component
 public class VehiculeMapper {

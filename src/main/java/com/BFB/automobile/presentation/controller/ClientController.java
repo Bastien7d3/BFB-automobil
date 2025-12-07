@@ -17,21 +17,6 @@ import java.util.stream.Collectors;
  * Contrôleur REST pour la gestion des clients
  * Expose les endpoints de l'API pour les opérations CRUD sur les clients
  * 
- * DESIGN PATTERNS GoF UTILISÉS :
- * 
- * 1. FACADE PATTERN : Ce contrôleur agit comme une façade qui simplifie l'accès
- *    aux opérations métier complexes. Il masque la complexité des validations,
- *    transformations et règles métier derrière une interface REST simple.
- * 
- * 2. ADAPTER PATTERN : Utilise ClientMapper pour convertir les entités (Client)
- *    vers des DTOs (ClientDTO) et vice-versa, adaptant ainsi la représentation
- *    interne à la représentation API.
- * 
- * 3. SINGLETON PATTERN : Spring crée une instance unique de ce contrôleur
- *    (scope singleton par défaut) qui gère toutes les requêtes HTTP.
- * 
- * 4. STRATEGY PATTERN : Spring MVC utilise différentes stratégies pour router
- *    les requêtes HTTP vers les bonnes méthodes selon le verbe HTTP (GET/POST/PUT/DELETE).
  */
 @RestController
 @RequestMapping("/api/clients")

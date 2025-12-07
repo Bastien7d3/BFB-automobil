@@ -17,12 +17,6 @@ import java.util.stream.Collectors;
 /**
  * Contrôleur REST pour la gestion des contrats de location
  * Expose les endpoints de l'API pour les opérations sur les contrats
- * 
- * DESIGN PATTERNS GoF UTILISÉS : (identiques aux autres contrôleurs)
- * - FACADE PATTERN : Simplifie l'accès aux opérations métier complexes des contrats
- * - ADAPTER PATTERN : ContratMapper convertit entre Contrat et ContratDTO
- * - SINGLETON PATTERN : Instance unique créée par Spring
- * - STRATEGY PATTERN : Routage HTTP par Spring MVC
  */
 @RestController
 @RequestMapping("/api/contrats")
