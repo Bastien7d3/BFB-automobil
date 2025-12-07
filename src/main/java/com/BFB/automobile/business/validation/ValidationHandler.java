@@ -4,18 +4,6 @@ import com.BFB.automobile.data.Contrat;
 
 /**
  * Classe abstraite pour la chaîne de validation de contrats
- * 
- * DESIGN PATTERN GoF UTILISÉ :
- * 
- * CHAIN OF RESPONSIBILITY PATTERN : Cette classe définit la structure d'une chaîne
- * de responsabilité où chaque handler peut traiter une validation ou la passer
- * au handler suivant dans la chaîne.
- * 
- * Avantages :
- * - Découple l'émetteur d'une requête de ses récepteurs
- * - Permet d'ajouter ou retirer des validations facilement
- * - Chaque validation a une seule responsabilité (SRP)
- * - L'ordre des validations est configurable
  */
 public abstract class ValidationHandler {
     

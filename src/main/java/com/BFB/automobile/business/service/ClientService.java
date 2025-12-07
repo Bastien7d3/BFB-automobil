@@ -30,11 +30,6 @@ import java.util.Optional;
  *    - @Transactional = stratégie lecture-écriture
  *    - @Transactional(readOnly = true) = stratégie lecture optimisée
  * 
- * 3. SINGLETON PATTERN : Spring crée une instance unique de ce service
- *    (@Service = @Component avec sémantique métier).
- * 
- * 4. TEMPLATE METHOD PATTERN (implicite) : Les méthodes publiques définissent
- *    un algorithme de traitement avec des étapes fixes (validation → traitement → persistance).
  */
 @Service
 @Transactional

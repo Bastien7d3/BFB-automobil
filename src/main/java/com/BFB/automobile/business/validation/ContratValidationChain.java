@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
  * Configuration de la chaîne de validation pour les contrats
  * Définit l'ordre d'exécution des validations
  * 
- * DESIGN PATTERN GoF UTILISÉ :
- * 
  * CHAIN OF RESPONSIBILITY PATTERN : Cette classe configure la chaîne de handlers
  * qui vont valider un contrat. Chaque handler effectue une validation spécifique
  * et passe au suivant si tout est OK.

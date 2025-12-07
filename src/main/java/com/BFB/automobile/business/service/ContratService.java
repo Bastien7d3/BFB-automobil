@@ -19,16 +19,6 @@ import java.util.List;
  * - Validation des périodes de location
  * - Gestion des états des contrats
  * - Traitement automatique des retards et annulations
- * 
- * DESIGN PATTERNS GoF UTILISÉS :
- * - FACADE PATTERN : Encapsule la logique métier complexe des contrats
- * - STRATEGY PATTERN : @Transactional pour la gestion des transactions
- * - SINGLETON PATTERN : Instance unique créée par Spring
- * - TEMPLATE METHOD PATTERN : Algorithme de traitement avec étapes fixes
- * - STATE PATTERN (implicite) : Gestion des états des contrats (EN_ATTENTE, EN_COURS,
- *   EN_RETARD, TERMINE, ANNULE) avec transitions contrôlées
- * - COMMAND PATTERN (implicite) : Les méthodes @Scheduled encapsulent des commandes
- *   de traitement automatique (démarrer contrats, marquer retards, annuler contrats bloqués)
  */
 @Service
 @Transactional

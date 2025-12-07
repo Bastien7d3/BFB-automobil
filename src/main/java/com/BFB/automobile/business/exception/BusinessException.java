@@ -2,19 +2,6 @@ package com.BFB.automobile.business.exception;
 
 /**
  * Exception métier pour les violations de règles métier
- * 
- * DESIGN PATTERN GoF UTILISÉ :
- * 
- * TEMPLATE METHOD PATTERN (implicite) : Cette classe hérite de RuntimeException
- * et réutilise le template défini par la hiérarchie d'exceptions Java.
- * Les constructeurs multiples permettent différentes façons de créer l'exception
- * tout en conservant la même structure de base.
- * 
- * Avantages :
- * - Code d'erreur structuré pour un traitement programmatique
- * - Message lisible pour les utilisateurs
- * - Gestion centralisée via GlobalExceptionHandler
- * - RuntimeException = pas besoin de try-catch partout (unchecked exception)
  */
 public class BusinessException extends RuntimeException {
     

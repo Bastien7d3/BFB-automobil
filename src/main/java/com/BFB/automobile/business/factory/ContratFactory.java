@@ -14,12 +14,6 @@ import java.time.LocalDate;
  * 
  * FACTORY PATTERN : Cette classe centralise la logique de création des contrats
  * selon différents types de location (courte durée, longue durée, weekend).
- * 
- * Avantages :
- * - Encapsule la logique de création complexe
- * - Facilite l'ajout de nouveaux types de contrats
- * - Assure la cohérence dans la création des contrats
- * - Sépare la logique de création de la logique métier
  */
 @Component
 public class ContratFactory {
