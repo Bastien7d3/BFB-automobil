@@ -39,13 +39,14 @@ class ClientServiceTest {
     
     @BeforeEach
     void setUp() {
-        clientValide = new Client();
-        clientValide.setNom("Dupont");
-        clientValide.setPrenom("Jean");
-        clientValide.setDateNaissance(LocalDate.of(1990, 5, 15));
-        clientValide.setNumeroPermis("123456789");
-        clientValide.setAdresse("10 rue de la Paix, 75001 Paris");
-        clientValide.setActif(true);
+        clientValide = Client.builder()
+                .nom("Dupont")
+                .prenom("Jean")
+                .dateNaissance(LocalDate.of(1990, 5, 15))
+                .numeroPermis("123456789")
+                .adresse("10 rue de la Paix, 75001 Paris")
+                .actif(true)
+                .build();
     }
     
     // ========== Tests de création de client ==========

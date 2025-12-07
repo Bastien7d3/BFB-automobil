@@ -53,26 +53,36 @@ class ContratServiceTest {
     @BeforeEach
     void setUp() {
         // Client actif
-        clientActif = new Client();
+        clientActif = Client.builder()
+                .nom("Dupont")
+                .prenom("Jean")
+                .dateNaissance(LocalDate.of(1990, 5, 15))
+                .numeroPermis("123456789")
+                .adresse("10 rue de la Paix")
+                .actif(true)
+                .build();
         clientActif.setId(1L);
-        clientActif.setNom("Dupont");
-        clientActif.setPrenom("Jean");
-        clientActif.setActif(true);
         
         // Véhicule disponible
-        vehiculeDisponible = new Vehicule();
+        vehiculeDisponible = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .immatriculation("AB-123-CD")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
         vehiculeDisponible.setId(1L);
-        vehiculeDisponible.setMarque("Peugeot");
-        vehiculeDisponible.setModele("308");
-        vehiculeDisponible.setEtat(EtatVehicule.DISPONIBLE);
         
         // Contrat valide dans le futur
-        contratValide = new Contrat();
-        contratValide.setClient(clientActif);
-        contratValide.setVehicule(vehiculeDisponible);
-        contratValide.setDateDebut(LocalDate.now().plusDays(5));
-        contratValide.setDateFin(LocalDate.now().plusDays(10));
-        contratValide.setEtat(EtatContrat.EN_ATTENTE);
+        contratValide = Contrat.builder()
+                .client(clientActif)
+                .vehicule(vehiculeDisponible)
+                .dateDebut(LocalDate.now().plusDays(5))
+                .dateFin(LocalDate.now().plusDays(10))
+                .etat(EtatContrat.EN_ATTENTE)
+                .build();
     }
     
     // ========== Tests de création de contrat ==========

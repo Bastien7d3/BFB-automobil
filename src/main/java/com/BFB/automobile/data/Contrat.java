@@ -190,4 +190,60 @@ public class Contrat {
                 ", vehiculeId=" + (vehicule != null ? vehicule.getId() : null) +
                 '}';
     }
+    
+    public static ContratBuilder builder() {
+        return new ContratBuilder();
+    }
+    
+    public static class ContratBuilder {
+        private LocalDate dateDebut;
+        private LocalDate dateFin;
+        private Client client;
+        private Vehicule vehicule;
+        private EtatContrat etat = EtatContrat.EN_ATTENTE;
+        private String commentaire;
+        
+        private ContratBuilder() {}
+        
+        public ContratBuilder dateDebut(LocalDate dateDebut) {
+            this.dateDebut = dateDebut;
+            return this;
+        }
+        
+        public ContratBuilder dateFin(LocalDate dateFin) {
+            this.dateFin = dateFin;
+            return this;
+        }
+        
+        public ContratBuilder client(Client client) {
+            this.client = client;
+            return this;
+        }
+        
+        public ContratBuilder vehicule(Vehicule vehicule) {
+            this.vehicule = vehicule;
+            return this;
+        }
+        
+        public ContratBuilder etat(EtatContrat etat) {
+            this.etat = etat;
+            return this;
+        }
+        
+        public ContratBuilder commentaire(String commentaire) {
+            this.commentaire = commentaire;
+            return this;
+        }
+        
+        public Contrat build() {
+            Contrat contrat = new Contrat();
+            contrat.setDateDebut(this.dateDebut);
+            contrat.setDateFin(this.dateFin);
+            contrat.setClient(this.client);
+            contrat.setVehicule(this.vehicule);
+            contrat.setEtat(this.etat);
+            contrat.setCommentaire(this.commentaire);
+            return contrat;
+        }
+    }
 }

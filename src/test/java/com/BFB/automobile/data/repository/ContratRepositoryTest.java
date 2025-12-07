@@ -39,42 +39,46 @@ class ContratRepositoryTest {
     @BeforeEach
     void setUp() {
         // Créer un client
-        client = new Client();
-        client.setNom("Dupont");
-        client.setPrenom("Jean");
-        client.setDateNaissance(LocalDate.of(1990, 5, 15));
-        client.setNumeroPermis("567890123");
-        client.setAdresse("10 Rue de la Paix");
-        client.setActif(true);
+        client = Client.builder()
+                .nom("Dupont")
+                .prenom("Jean")
+                .dateNaissance(LocalDate.of(1990, 5, 15))
+                .numeroPermis("567890123")
+                .adresse("10 Rue de la Paix")
+                .actif(true)
+                .build();
         
         // Créer un véhicule
-        vehicule = new Vehicule();
-        vehicule.setMarque("Peugeot");
-        vehicule.setModele("308");
-        vehicule.setMotorisation("Diesel");
-        vehicule.setCouleur("Blanc");
-        vehicule.setImmatriculation("KL-012-MN");
-        vehicule.setDateAcquisition(LocalDate.of(2020, 1, 15));
-        vehicule.setEtat(EtatVehicule.DISPONIBLE);
+        vehicule = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .immatriculation("KL-012-MN")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
         
         // Persister client et véhicule
         entityManager.persist(client);
         entityManager.persist(vehicule);
         
         // Créer des contrats
-        contrat1 = new Contrat();
-        contrat1.setClient(client);
-        contrat1.setVehicule(vehicule);
-        contrat1.setDateDebut(LocalDate.of(2024, 1, 10));
-        contrat1.setDateFin(LocalDate.of(2024, 1, 20));
-        contrat1.setEtat(EtatContrat.EN_COURS);
+        contrat1 = Contrat.builder()
+                .client(client)
+                .vehicule(vehicule)
+                .dateDebut(LocalDate.of(2024, 1, 10))
+                .dateFin(LocalDate.of(2024, 1, 20))
+                .etat(EtatContrat.EN_COURS)
+                .build();
         
-        contrat2 = new Contrat();
-        contrat2.setClient(client);
-        contrat2.setVehicule(vehicule);
-        contrat2.setDateDebut(LocalDate.of(2024, 2, 1));
-        contrat2.setDateFin(LocalDate.of(2024, 2, 10));
-        contrat2.setEtat(EtatContrat.EN_ATTENTE);
+        contrat2 = Contrat.builder()
+                .client(client)
+                .vehicule(vehicule)
+                .dateDebut(LocalDate.of(2024, 2, 1))
+                .dateFin(LocalDate.of(2024, 2, 10))
+                .etat(EtatContrat.EN_ATTENTE)
+                .build();
     }
     
     // ========== Tests de sauvegarde ==========

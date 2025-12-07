@@ -127,4 +127,67 @@ public class Vehicule {
                 ", etat=" + etat +
                 '}';
     }
+    
+    public static VehiculeBuilder builder() {
+        return new VehiculeBuilder();
+    }
+    
+    public static class VehiculeBuilder {
+        private String marque;
+        private String modele;
+        private String motorisation;
+        private String couleur;
+        private String immatriculation;
+        private LocalDate dateAcquisition;
+        private EtatVehicule etat = EtatVehicule.DISPONIBLE;
+        
+        private VehiculeBuilder() {}
+        
+        public VehiculeBuilder marque(String marque) {
+            this.marque = marque;
+            return this;
+        }
+        
+        public VehiculeBuilder modele(String modele) {
+            this.modele = modele;
+            return this;
+        }
+        
+        public VehiculeBuilder motorisation(String motorisation) {
+            this.motorisation = motorisation;
+            return this;
+        }
+        
+        public VehiculeBuilder couleur(String couleur) {
+            this.couleur = couleur;
+            return this;
+        }
+        
+        public VehiculeBuilder immatriculation(String immatriculation) {
+            this.immatriculation = immatriculation;
+            return this;
+        }
+        
+        public VehiculeBuilder dateAcquisition(LocalDate dateAcquisition) {
+            this.dateAcquisition = dateAcquisition;
+            return this;
+        }
+        
+        public VehiculeBuilder etat(EtatVehicule etat) {
+            this.etat = etat;
+            return this;
+        }
+        
+        public Vehicule build() {
+            Vehicule vehicule = new Vehicule();
+            vehicule.setMarque(this.marque);
+            vehicule.setModele(this.modele);
+            vehicule.setMotorisation(this.motorisation);
+            vehicule.setCouleur(this.couleur);
+            vehicule.setImmatriculation(this.immatriculation);
+            vehicule.setDateAcquisition(this.dateAcquisition);
+            vehicule.setEtat(this.etat);
+            return vehicule;
+        }
+    }
 }

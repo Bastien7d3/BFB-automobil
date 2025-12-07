@@ -163,4 +163,63 @@ public class Client {
                 ", actif=" + actif +
                 '}';
     }
+    
+    /**
+     * BUILDER PATTERN : Permet de construire un objet Client de manière fluide et lisible
+     */
+    public static ClientBuilder builder() {
+        return new ClientBuilder();
+    }
+    
+    public static class ClientBuilder {
+        private String nom;
+        private String prenom;
+        private LocalDate dateNaissance;
+        private String numeroPermis;
+        private String adresse;
+        private Boolean actif = true;
+        
+        private ClientBuilder() {}
+        
+        public ClientBuilder nom(String nom) {
+            this.nom = nom;
+            return this;
+        }
+        
+        public ClientBuilder prenom(String prenom) {
+            this.prenom = prenom;
+            return this;
+        }
+        
+        public ClientBuilder dateNaissance(LocalDate dateNaissance) {
+            this.dateNaissance = dateNaissance;
+            return this;
+        }
+        
+        public ClientBuilder numeroPermis(String numeroPermis) {
+            this.numeroPermis = numeroPermis;
+            return this;
+        }
+        
+        public ClientBuilder adresse(String adresse) {
+            this.adresse = adresse;
+            return this;
+        }
+        
+        public ClientBuilder actif(Boolean actif) {
+            this.actif = actif;
+            return this;
+        }
+        
+        public Client build() {
+            Client client = new Client();
+            client.setNom(this.nom);
+            client.setPrenom(this.prenom);
+            client.setDateNaissance(this.dateNaissance);
+            client.setNumeroPermis(this.numeroPermis);
+            client.setAdresse(this.adresse);
+            client.setActif(this.actif);
+            return client;
+        }
+    }
 }

@@ -46,14 +46,15 @@ class VehiculeServiceTest {
     
     @BeforeEach
     void setUp() {
-        vehiculeValide = new Vehicule();
-        vehiculeValide.setMarque("Peugeot");
-        vehiculeValide.setModele("308");
-        vehiculeValide.setMotorisation("Diesel");
-        vehiculeValide.setCouleur("Blanc");
-        vehiculeValide.setImmatriculation("AB-123-CD");
-        vehiculeValide.setDateAcquisition(LocalDate.of(2020, 1, 15));
-        vehiculeValide.setEtat(EtatVehicule.DISPONIBLE);
+        vehiculeValide = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .immatriculation("AB-123-CD")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
     }
     
     // ========== Tests de création de véhicule ==========
@@ -92,9 +93,16 @@ class VehiculeServiceTest {
     @Test
     void mettreAJourVehicule_devraitReussir_avecDonneesValides() {
         // Arrange
-        Vehicule vehiculeExistant = new Vehicule();
+        Vehicule vehiculeExistant = Vehicule.builder()
+                .immatriculation("AB-123-CD")
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
         vehiculeExistant.setId(1L);
-        vehiculeExistant.setImmatriculation("AB-123-CD");
         
         when(vehiculeRepository.findById(1L)).thenReturn(Optional.of(vehiculeExistant));
         when(vehiculeRepository.save(any(Vehicule.class))).thenReturn(vehiculeExistant);

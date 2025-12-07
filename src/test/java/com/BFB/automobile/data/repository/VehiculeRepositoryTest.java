@@ -37,32 +37,35 @@ class VehiculeRepositoryTest {
     
     @BeforeEach
     void setUp() {
-        vehicule1 = new Vehicule();
-        vehicule1.setMarque("Peugeot");
-        vehicule1.setModele("308");
-        vehicule1.setMotorisation("Diesel");
-        vehicule1.setCouleur("Blanc");
-        vehicule1.setImmatriculation("AA-111-AA");
-        vehicule1.setDateAcquisition(LocalDate.of(2020, 1, 15));
-        vehicule1.setEtat(EtatVehicule.DISPONIBLE);
+        vehicule1 = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .immatriculation("AA-111-AA")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
         
-        vehicule2 = new Vehicule();
-        vehicule2.setMarque("Renault");
-        vehicule2.setModele("Clio");
-        vehicule2.setMotorisation("Essence");
-        vehicule2.setCouleur("Rouge");
-        vehicule2.setImmatriculation("BB-222-BB");
-        vehicule2.setDateAcquisition(LocalDate.of(2021, 6, 10));
-        vehicule2.setEtat(EtatVehicule.EN_LOCATION);
+        vehicule2 = Vehicule.builder()
+                .marque("Renault")
+                .modele("Clio")
+                .motorisation("Essence")
+                .couleur("Rouge")
+                .immatriculation("BB-222-BB")
+                .dateAcquisition(LocalDate.of(2021, 6, 10))
+                .etat(EtatVehicule.EN_LOCATION)
+                .build();
         
-        vehicule3 = new Vehicule();
-        vehicule3.setMarque("Peugeot");
-        vehicule3.setModele("208");
-        vehicule3.setMotorisation("Essence");
-        vehicule3.setCouleur("Noir");
-        vehicule3.setImmatriculation("CC-333-CC");
-        vehicule3.setDateAcquisition(LocalDate.of(2022, 3, 5));
-        vehicule3.setEtat(EtatVehicule.EN_PANNE);
+        vehicule3 = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("208")
+                .motorisation("Essence")
+                .couleur("Noir")
+                .immatriculation("CC-333-CC")
+                .dateAcquisition(LocalDate.of(2022, 3, 5))
+                .etat(EtatVehicule.EN_PANNE)
+                .build();
     }
     
     // ========== Tests de sauvegarde ==========
@@ -70,10 +73,18 @@ class VehiculeRepositoryTest {
     @Test
     void save_devraitPersisterVehicule() {
         // Arrange
-        vehicule1.setImmatriculation("DD-444-DD");
+        Vehicule nouveauVehicule = Vehicule.builder()
+                .marque("Peugeot")
+                .modele("308")
+                .motorisation("Diesel")
+                .couleur("Blanc")
+                .immatriculation("DD-444-DD")
+                .dateAcquisition(LocalDate.of(2020, 1, 15))
+                .etat(EtatVehicule.DISPONIBLE)
+                .build();
         
         // Act
-        Vehicule saved = vehiculeRepository.save(vehicule1);
+        Vehicule saved = vehiculeRepository.save(nouveauVehicule);
         
         // Assert
         assertNotNull(saved.getId());

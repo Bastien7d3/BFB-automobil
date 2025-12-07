@@ -37,21 +37,23 @@ class ClientRepositoryTest {
     
     @BeforeEach
     void setUp() {
-        client1 = new Client();
-        client1.setNom("Dupont");
-        client1.setPrenom("Jean");
-        client1.setDateNaissance(LocalDate.of(1990, 5, 15));
-        client1.setNumeroPermis("111111111");
-        client1.setAdresse("10 Rue de la Paix, 75001 Paris");
-        client1.setActif(true);
+        client1 = Client.builder()
+                .nom("Dupont")
+                .prenom("Jean")
+                .dateNaissance(LocalDate.of(1990, 5, 15))
+                .numeroPermis("111111111")
+                .adresse("10 Rue de la Paix, 75001 Paris")
+                .actif(true)
+                .build();
         
-        client2 = new Client();
-        client2.setNom("Martin");
-        client2.setPrenom("Sophie");
-        client2.setDateNaissance(LocalDate.of(1985, 8, 20));
-        client2.setNumeroPermis("222222222");
-        client2.setAdresse("25 Avenue des Champs, 69000 Lyon");
-        client2.setActif(true);
+        client2 = Client.builder()
+                .nom("Martin")
+                .prenom("Sophie")
+                .dateNaissance(LocalDate.of(1985, 8, 20))
+                .numeroPermis("222222222")
+                .adresse("25 Avenue des Champs, 69000 Lyon")
+                .actif(true)
+                .build();
     }
     
     // ========== Tests de sauvegarde ==========
@@ -59,10 +61,17 @@ class ClientRepositoryTest {
     @Test
     void save_devraitPersisterClient() {
         // Arrange
-        client1.setNumeroPermis("444444444");
+        Client nouveauClient = Client.builder()
+                .nom("Dupont")
+                .prenom("Jean")
+                .dateNaissance(LocalDate.of(1990, 5, 15))
+                .numeroPermis("444444444")
+                .adresse("10 Rue de la Paix, 75001 Paris")
+                .actif(true)
+                .build();
         
         // Act
-        Client saved = clientRepository.save(client1);
+        Client saved = clientRepository.save(nouveauClient);
         
         // Assert
         assertNotNull(saved.getId());
